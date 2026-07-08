@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>원소 탐험대 · 생물을 이루는 물질</title>
+<style>
+  :root{
+    --purple1:#667eea; --purple2:#764ba2;
+    --carb:#f5b400;      /* 탄수화물 노랑 */
+    --protein:#ff6b6b;   /* 단백질 빨강 */
+    --lipid:#ff9933;     /* 지방 주황 */
+    --nucleic:#4a6cf7;   /* 핵산 파랑 */
+    --ok:#2fb56b; --bad:#f5576c;
+    --ink:#2a2540; --muted:#8a86a0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:'Segoe UI','Malgun Gothic',Tahoma,sans-serif;
+    background:linear-gradient(135deg,var(--purple1),var(--purple2));
+    color:var(--ink); min-height:100vh; overflow-x:hidden;
+  }
+  #app{min-height:100vh;display:flex;flex-direction:column}
+  button{font-family:inherit;cursor:pointer;border:none}
+  .en{font-size:.72em;opacity:.75;font-weight:500}
+
+  /* ---------- 홈 ---------- */
+  .home{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:32px 20px;gap:18px}
+  .home .emoji{font-size:4.5rem;animation:float 3s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+  .home h1{color:#fff;font-size:2.4rem;text-shadow:0 3px 10px rgba(0,0,0,.25);line-height:1.25}
+  .home h1 .en{display:block;margin-top:4px}
+  .home p{color:rgba(255,255,255,.9);font-size:1.05rem;max-width:520px;line-height:1.6}
+  .startBtn{margin-top:10px;background:#fff;color:var(--purple2);font-weight:800;
+    font-size:1.15rem;padding:16px 48px;border-radius:40px;box-shadow:0 8px 24px rgba(0,0,0,.22);
+    transition:transform .15s}
+  .startBtn:active{transform:scale(.96)}
+  .home .tags{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+  .home .tags span{background:rgba(255,255,255,.18);color:#fff;padding:6px 14px;border-radius:20px;font-size:.85rem}
+
+  /* ---------- 공통 상단바 ---------- */
+  .topbar{background:rgba(255,255,255,.96);backdrop-filter:blur(6px);
+    display:flex;align-items:center;gap:12px;padding:12px 16px;
+    box-shadow:0 2px 12px rgba(0,0,0,.12);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+  .backBtn{background:#eef0fb;color:var(--purple2);font-weight:700;padding:9px 16px;border-radius:20px;font-size:.9rem}
+  .backBtn:active{background:#e0e3f7}
+  .topTitle{font-weight:800;color:var(--purple2);font-size:1.05rem;flex:1;min-width:120px}
+  .badges{display:flex;gap:6px}
+  .badges .b{font-size:1.4rem;filter:grayscale(1);opacity:.35;transition:.3s}
+  .badges .b.on{filter:none;opacity:1;transform:scale(1.05)}
+  .progWrap{width:100%;height:7px;background:#e6e6f0;border-radius:10px;overflow:hidden;margin-top:2px}
+  .progFill{height:100%;background:linear-gradient(90deg,var(--purple1),var(--purple2));transition:width .5s;border-radius:10px}
+
+  /* ---------- 스테이지 선택 ---------- */
+  .wrap{max-width:980px;margin:0 auto;width:100%;padding:22px 16px 60px}
+  .sectionTitle{color:#fff;text-align:center;margin:10px 0 22px;font-size:1.5rem;text-shadow:0 2px 8px rgba(0,0,0,.2)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+  .card{background:#fff;border-radius:18px;padding:26px 20px;text-align:center;position:relative;
+    border:3px solid transparent;transition:transform .25s,box-shadow .25s;cursor:pointer}
+  .card:not(.locked):active{transform:scale(.98)}
+  .card:not(.locked):hover{transform:translateY(-6px);box-shadow:0 14px 30px rgba(0,0,0,.22)}
+  .card .ic{font-size:3rem;margin-bottom:10px}
+  .card h3{font-size:1.25rem;margin-bottom:4px}
+  .card .sub{color:var(--muted);font-size:.85rem;line-height:1.4;min-height:34px}
+  .card .chip{position:absolute;top:12px;right:12px;font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:14px}
+  .card.locked{opacity:.6;cursor:not-allowed}
+  .card.locked .chip{background:#d9d9e3;color:#6b6b7a}
+  .card.done{border-color:var(--ok)}
+  .card.done .chip{background:var(--ok);color:#fff}
+  .card.play .chip{background:var(--carb);color:#5a4200}
+  .card .go{margin-top:14px;display:inline-block;background:linear-gradient(135deg,var(--purple1),var(--purple2));
+    color:#fff;font-weight:700;padding:9px 22px;border-radius:22px;font-size:.9rem}
+
+  /* ---------- 스테이지 내부(미니게임 목록) ---------- */
+  .intro{background:rgba(255,255,255,.95);border-radius:16px;padding:20px 22px;margin-bottom:20px;line-height:1.65}
+  .intro h2{color:var(--carb);margin-bottom:6px}
+  .intro .lead{color:var(--muted)}
+
+  /* ---------- 미니게임 공통 ---------- */
+  .panel{background:#fff;border-radius:18px;padding:22px;margin-bottom:18px;box-shadow:0 6px 20px rgba(0,0,0,.14)}
+  .goal{background:linear-gradient(135deg,#fff7df,#fdeec0);border-left:5px solid var(--carb);
+    border-radius:12px;padding:14px 18px;margin-bottom:18px;line-height:1.55}
+  .goal b{color:#7a5a00}
+  .qnum{color:var(--muted);font-weight:700;font-size:.85rem;letter-spacing:.5px}
+  h2.gh{font-size:1.35rem;margin:2px 0 4px}
+  .hint{background:#eef6ff;border-radius:10px;padding:10px 14px;color:#2b5a8c;font-size:.9rem;margin-top:10px;line-height:1.5}
+  .feedback{border-radius:12px;padding:14px 16px;font-weight:700;text-align:center;margin:14px 0;line-height:1.5;display:none}
+  .feedback.correct{display:block;background:#e6f8ee;color:#1e7d49;border:2px solid var(--ok)}
+  .feedback.incorrect{display:block;background:#fdecef;color:#b32744;border:2px solid var(--bad)}
+  .btnRow{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+  .primary{background:linear-gradient(135deg,var(--purple1),var(--purple2));color:#fff;font-weight:800;
+    padding:14px 34px;border-radius:30px;font-size:1.05rem;transition:transform .15s}
+  .primary:active{transform:scale(.96)}
+  .primary:disabled{opacity:.45;cursor:not-allowed}
+  .ghost{background:#eef0fb;color:var(--purple2);font-weight:700;padding:14px 26px;border-radius:30px}
+
+  /* 원자 조립 게임 */
+  .lab{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}
+  .palette{flex:1;min-width:220px}
+  .palette h4,.flaskBox h4{font-size:.95rem;color:var(--muted);margin-bottom:10px}
+  .atoms{display:flex;gap:14px;flex-wrap:wrap}
+  .atom{width:64px;height:64px;border-radius:50%;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;color:#fff;font-weight:800;font-size:1.4rem;user-select:none;
+    box-shadow:0 4px 10px rgba(0,0,0,.2);touch-action:none;position:relative}
+  .atom small{font-size:.6rem;font-weight:600;opacity:.9}
+  .atom.C{background:#3b3b47}.atom.H{background:#5aa9e6}.atom.O{background:#e5484d}
+  .atom.drag{position:fixed;z-index:999;pointer-events:none;opacity:.92;transform:translate(-50%,-50%) scale(1.1)}
+  .flaskBox{flex:1;min-width:240px}
+  .flask{border:3px dashed #cfcfe0;border-radius:16px;min-height:150px;padding:14px;
+    display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;transition:.2s;background:#fafaff}
+  .flask.over{border-color:var(--carb);background:#fffdf3}
+  .flask .mini{width:38px;height:38px;border-radius:50%;color:#fff;font-weight:800;display:flex;
+    align-items:center;justify-content:center;font-size:.95rem;cursor:pointer}
+  .flask .mini.C{background:#3b3b47}.flask .mini.H{background:#5aa9e6}.flask .mini.O{background:#e5484d}
+  .counts{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .count{flex:1;min-width:80px;background:#f4f4fb;border-radius:12px;padding:10px;text-align:center}
+  .count .n{font-size:1.3rem;font-weight:800}
+  .count.ok .n{color:var(--ok)}
+  .count .lab2{font-size:.78rem;color:var(--muted)}
+  .formula{text-align:center;font-size:1.5rem;font-weight:800;margin-top:12px;letter-spacing:1px}
+  .formula sub{font-size:.7em}
+
+  /* 분류 게임 */
+  .pool{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:18px;min-height:56px}
+  .token{background:#fff;border:2px solid #dcdcea;border-radius:14px;padding:10px 16px;font-weight:700;
+    box-shadow:0 3px 8px rgba(0,0,0,.1);touch-action:none;user-select:none;transition:.15s}
+  .token .en{display:block}
+  .token.drag{position:fixed;z-index:999;pointer-events:none;transform:translate(-50%,-50%) scale(1.06);box-shadow:0 10px 20px rgba(0,0,0,.25)}
+  .token.placed{border-color:var(--ok)}
+  .bins{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .bin{background:#f6f6fc;border:3px dashed #d3d3e4;border-radius:16px;padding:14px 10px;min-height:150px;transition:.2s}
+  .bin.over{border-color:var(--carb);background:#fffdf3}
+  .bin h4{text-align:center;font-size:1rem;margin-bottom:4px}
+  .bin .desc{text-align:center;font-size:.75rem;color:var(--muted);margin-bottom:10px;min-height:30px}
+  .bin .drop{display:flex;flex-direction:column;gap:8px;align-items:center}
+
+  /* 매칭 게임 */
+  .matchRow{display:flex;flex-direction:column;gap:14px}
+  .matchItem{display:flex;gap:12px;align-items:stretch;flex-wrap:wrap}
+  .matchTarget{flex:1;min-width:150px;background:#f4f4fb;border-radius:14px;padding:14px;display:flex;
+    align-items:center;gap:10px}
+  .matchTarget .big{font-size:1.6rem}
+  .matchTarget .mt-name{font-weight:800}
+  .matchDrop{flex:1.4;min-width:180px;border:3px dashed #d3d3e4;border-radius:14px;min-height:58px;
+    display:flex;align-items:center;justify-content:center;padding:8px 12px;text-align:center;
+    color:var(--muted);font-size:.9rem;transition:.2s}
+  .matchDrop.over{border-color:var(--carb);background:#fffdf3}
+  .matchDrop.filled{border-style:solid;color:var(--ink);font-weight:600}
+
+  /* 구조식 뷰어 */
+  .structBox{text-align:center}
+  .structBox svg{max-width:340px;width:100%;height:auto}
+  .toggleRow{display:flex;gap:8px;justify-content:center;margin:8px 0 4px}
+  .toggleRow button{background:#eef0fb;color:var(--purple2);font-weight:700;padding:8px 16px;border-radius:20px;font-size:.85rem}
+  .toggleRow button.active{background:var(--purple2);color:#fff}
+
+  /* 완료 화면 */
+  .clear{text-align:center;padding:20px}
+  .clear .medal{font-size:5rem;animation:pop .6s ease}
+  @keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.25)}100%{transform:scale(1)}}
+  .clear h2{color:#fff;margin:10px 0}
+  .clear .badgeGet{background:rgba(255,255,255,.95);border-radius:16px;padding:18px;margin:16px auto;max-width:420px}
+  .clear .badgeGet .bi{font-size:2.5rem}
+
+  /* ---------- 광합성 반응로 ---------- */
+  .reactorWrap{display:flex;gap:16px;flex-wrap:wrap;align-items:stretch;margin-bottom:12px}
+  .sources{display:flex;flex-direction:column;gap:12px;min-width:150px;flex:1}
+  .srcCol{background:#f6f6fc;border-radius:14px;padding:14px;text-align:center}
+  .srcCol h4{font-size:.9rem;color:var(--muted);margin-bottom:10px}
+  .srcCol .en{font-size:.66rem}
+  .srcCol small{display:block;color:#b0b0be;font-size:.7rem;margin-top:8px}
+  .mol{display:inline-block;cursor:grab;touch-action:none;user-select:none;transition:transform .12s}
+  .mol:active{transform:scale(.9)}
+  .mol.drag{position:fixed;z-index:999;pointer-events:none;transform:translate(-50%,-50%) scale(1.15)}
+  .reactor{flex:2;min-width:240px;min-height:190px;border-radius:18px;position:relative;
+    background:radial-gradient(circle at 50% 25%,#effbe3,#c7ecac);border:3px dashed #8fd15a;
+    display:flex;flex-direction:column;align-items:center;padding:14px;overflow:hidden}
+  .reactor.over{border-color:#f5b400;background:radial-gradient(circle at 50% 25%,#fffbe8,#ffe6a0)}
+  .reactor .sun{position:absolute;top:8px;right:12px;font-size:1.7rem;filter:drop-shadow(0 0 8px rgba(255,210,63,.8))}
+  .reactorLabel{font-weight:800;color:#4a7a2a;margin-bottom:10px}
+  .molBucket{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;align-content:flex-start;width:100%}
+  .chip{cursor:pointer;background:#fff;border-radius:10px;padding:4px 6px;box-shadow:0 2px 5px rgba(0,0,0,.12);display:flex;align-items:center}
+  .atomTally{text-align:center;color:var(--muted);font-size:.92rem;margin:8px 0}
+  .atomTally b{color:var(--ink)}
+  .o2bubble{position:absolute;bottom:22px;background:#fff;border-radius:8px;padding:2px 4px;box-shadow:0 2px 5px rgba(0,0,0,.15);animation:rise 1.7s ease-in forwards}
+  @keyframes rise{to{transform:translateY(-170px);opacity:0}}
+  .productPop{animation:pop .5s}
+
+  /* ---------- 마을 퀴즈 ---------- */
+  .quizChoices{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+  .choiceBtn{width:100%;text-align:left;background:#f6f6fc;border:2px solid #e2e2ee;border-radius:14px;
+    padding:14px 18px;font-size:1rem;font-weight:600;color:var(--ink);transition:transform .12s,background .15s,border-color .15s}
+  .choiceBtn:not(.locked):hover{border-color:var(--purple1);background:#eef0fb}
+  .choiceBtn:not(.locked):active{transform:scale(.98)}
+  .choiceBtn.locked{cursor:default}
+  .choiceBtn.right{background:#e6f8ee;border-color:var(--ok);color:#1e7d49}
+  .choiceBtn.right::after{content:' ✓';font-weight:800;color:var(--ok)}
+  .choiceBtn.wrong{background:#fdecef;border-color:var(--bad);color:#b32744}
+  .choiceBtn.wrong::after{content:' ✕';font-weight:800;color:var(--bad)}
+  /* 조립형 미니게임 공용 드롭존 */
+  .dz{transition:border-color .15s,background .15s}
+  .dz.over{border-color:#f5b400 !important;background:#fffdf3 !important}
+
+  /* ---------- 월드맵 ---------- */
+  .mapWrap{max-width:820px;margin:0 auto;width:100%;padding:14px 12px 24px}
+  .mapHead{text-align:center;color:#fff;margin:4px 0 12px}
+  .mapHead h2{font-size:1.4rem;text-shadow:0 2px 8px rgba(0,0,0,.25)}
+  .mapHead p{opacity:.9;font-size:.9rem;margin-top:4px}
+  /* 밝은 만화풍 하늘+초원 배경 */
+  .mapScene{position:relative;width:100%;height:min(72vh,600px);border-radius:24px;overflow:hidden;
+    background:linear-gradient(180deg,#7ec8f0 0%,#a9dcff 30%,#d6f2ff 52%,#e2f6cf 66%,#bfe89a 100%);
+    box-shadow:inset 0 0 0 4px rgba(255,255,255,.5),0 14px 34px rgba(60,90,120,.3);
+    border:3px solid #fff;touch-action:manipulation}
+  .sun{position:absolute;top:16px;right:20px;width:56px;height:56px;border-radius:50%;
+    background:radial-gradient(circle at 40% 40%,#fff6b0,#ffd23f 70%);
+    box-shadow:0 0 26px rgba(255,210,63,.7);z-index:1;pointer-events:none}
+  .hills{position:absolute;left:0;right:0;bottom:0;width:100%;height:44%;z-index:1;pointer-events:none}
+  .cloud{position:absolute;z-index:2;pointer-events:none;opacity:.96;
+    filter:drop-shadow(0 4px 5px rgba(80,110,140,.12));animation:cloudDrift 22s ease-in-out infinite}
+  .cloud.c2{animation-duration:30s;animation-delay:-6s;opacity:.9}
+  .cloud.c3{animation-duration:26s;animation-delay:-12s;opacity:.85}
+  @keyframes cloudDrift{0%,100%{transform:translateX(0)}50%{transform:translateX(22px)}}
+  .biome{position:absolute;width:min(40vw,210px);height:min(40vw,210px);transform:translate(-50%,-50%);
+    border-radius:50%;filter:blur(14px);opacity:.22;pointer-events:none;z-index:1;mix-blend-mode:soft-light}
+  .particle{position:absolute;border-radius:50%;pointer-events:none;z-index:3;
+    background:rgba(255,255,255,.8);width:6px;height:6px;animation:drift 7s ease-in-out infinite}
+  .particle.p1{width:9px;height:9px;background:rgba(255,210,63,.7);animation-duration:9s}
+  .particle.p2{width:5px;height:5px;background:rgba(120,200,255,.75);animation-duration:6s}
+  .particle.p3{width:7px;height:7px;background:rgba(255,140,160,.6);animation-duration:8s}
+  @keyframes drift{0%,100%{transform:translateY(0);opacity:.3}50%{transform:translateY(-14px);opacity:.85}}
+  .roadSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:4}
+  .node{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;
+    align-items:center;gap:5px;cursor:pointer;width:112px;text-align:center;z-index:6}
+  .node .landmark{position:relative;width:78px;height:78px;transition:transform .2s;
+    filter:drop-shadow(0 4px 3px rgba(40,70,100,.28))}
+  .node .landmark svg{width:100%;height:100%;display:block}
+  .node .cornerBadge{position:absolute;top:2px;right:8px;width:24px;height:24px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:800;color:#fff;
+    box-shadow:0 2px 6px rgba(0,0,0,.35);z-index:3;border:2px solid #fff}
+  .cornerBadge.done{background:var(--ok)}
+  .cornerBadge.lock{background:#7a7a8c}
+  .node .nlabel{color:#fff;font-size:.78rem;font-weight:800;line-height:1.15;
+    background:rgba(40,55,90,.72);padding:3px 11px;border-radius:12px;box-shadow:0 2px 5px rgba(0,0,0,.2)}
+  .node.locked .landmark{filter:grayscale(.8) brightness(.9) drop-shadow(0 4px 3px rgba(40,70,100,.28))}
+  .node.locked{cursor:not-allowed}
+  .node.locked .nlabel{opacity:.8}
+  .node:not(.locked):active .landmark{transform:scale(.9)}
+  .node.current .landmark::after{content:'';position:absolute;inset:6px;border-radius:50%;
+    border:3px solid rgba(255,196,40,.95);box-shadow:0 0 10px rgba(255,196,40,.7);
+    animation:ringPulse 1.6s ease-out infinite}
+  @keyframes ringPulse{0%{transform:scale(.8);opacity:.95}100%{transform:scale(1.5);opacity:0}}
+  /* 캐릭터는 노드 왼쪽에 비켜 서서 랜드마크를 가리지 않음 */
+  .hero{position:absolute;transform:translate(-104%,-60%);z-index:9;width:44px;
+    transition:left .8s ease-in-out,top .8s ease-in-out;pointer-events:none}
+  .hero svg{width:100%;height:auto;display:block;filter:drop-shadow(0 4px 3px rgba(40,70,100,.35))}
+  .hero::after{content:'';position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:26px;height:7px;
+    border-radius:50%;background:rgba(40,70,100,.26);filter:blur(3px);z-index:-1}
+  .hero.walking{animation:bob .3s infinite}
+  @keyframes bob{0%,100%{transform:translate(-104%,-60%)}50%{transform:translate(-104%,-70%)}}
+  /* 걷기: 다리 번갈아 흔들기 */
+  .hero svg .leg{transform-box:fill-box;transform-origin:top center}
+  .hero.walking svg .legL{animation:step .32s infinite}
+  .hero.walking svg .legR{animation:step .32s infinite reverse}
+  @keyframes step{0%,100%{transform:rotate(7deg)}50%{transform:rotate(-7deg)}}
+  .mapAction{max-width:820px;margin:14px auto 0;background:rgba(255,255,255,.96);border-radius:16px;
+    padding:14px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+  .mapAction .info{flex:1;min-width:150px}
+  .mapAction .info h3{font-size:1.05rem}
+  .mapAction .info .sub{color:var(--muted);font-size:.85rem;line-height:1.4}
+  .mapAction .nav{display:flex;gap:8px}
+  .navBtn{background:#eef0fb;color:var(--purple2);font-weight:800;width:48px;height:48px;border-radius:14px;font-size:1.15rem}
+  .navBtn:disabled{opacity:.3;cursor:not-allowed}
+  .enterBtn{background:linear-gradient(135deg,var(--purple1),var(--purple2));color:#fff;font-weight:800;
+    padding:13px 26px;border-radius:26px;font-size:1rem;transition:transform .15s}
+  .enterBtn:active{transform:scale(.95)}
+  .enterBtn.soon{background:#c9c9d6;color:#5f5f70}
+  .enterBtn:disabled{background:#e2e2ea;color:#a0a0b0;cursor:not-allowed}
+  .toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(20px);
+    background:rgba(30,26,55,.95);color:#fff;padding:12px 22px;border-radius:30px;font-weight:600;
+    font-size:.92rem;z-index:999;opacity:0;transition:.3s;max-width:88%;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media(max-width:560px){
+    .home h1{font-size:1.9rem}
+    .bins{grid-template-columns:1fr}
+    .atom{width:56px;height:56px;font-size:1.2rem}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =========================================================================
+   원소 탐험대 — 생물을 이루는 물질 (탄수화물 스테이지)
+   단일 HTML · 모바일 pointer 드래그 지원 · 한국어 우선
+   ========================================================================= */
+
+const STAGES = [
+  {id:'carb',    name:'탄수화물 월드', en:'Carbohydrate World', ic:'🍞', color:'--carb',
+   sub:'C·H·O로 포도당을 짓고 다당류를 이해', badge:'⚡', status:'play'},
+  {id:'protein', name:'단백질 성의',   en:'Protein Castle', ic:'🧬', color:'--protein',
+   sub:'아미노산과 펩타이드 결합', badge:'🔮', status:'lock'},
+  {id:'lipid',   name:'지방 저장소',   en:'Lipid Storage', ic:'💧', color:'--lipid',
+   sub:'글리세롤·지방산, 포화/불포화', badge:'🔥', status:'lock'},
+  {id:'nucleic', name:'정보 도서관',   en:'Nucleic Acid', ic:'📚', color:'--nucleic',
+   sub:'염기쌍과 DNA 이중나선', badge:'🧭', status:'lock'},
+];
+
+// 진행 상태 (localStorage 저장)
+const SAVE_KEY = 'bioGame_v1';
+let save = load();
+function load(){ try{return JSON.parse(localStorage.getItem(SAVE_KEY))||{done:{}}}catch(e){return {done:{}}} }
+function persist(){ try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch(e){} }
+function stageDone(id){ return !!save.done[id]; }
+
+const app = document.getElementById('app');
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+/* ---------------- 재사용 드래그 헬퍼 (pointer 이벤트, 터치/마우스 공용) ------- */
+function makeDraggable(el, {getGhost, onDropTo, dropSelector, onStart, onEnd}){
+  el.style.touchAction='none';
+  el.addEventListener('pointerdown', e=>{
+    if(el.dataset.locked==='1') return;
+    e.preventDefault();
+    const ghost = getGhost ? getGhost(el) : el.cloneNode(true);
+    ghost.classList.add('drag');
+    document.body.appendChild(ghost);
+    let lastOver=null;
+    onStart && onStart(el);
+    const move = ev=>{
+      ghost.style.left = ev.clientX+'px';
+      ghost.style.top  = ev.clientY+'px';
+      ghost.style.display='none';
+      const under = document.elementFromPoint(ev.clientX, ev.clientY);
+      ghost.style.display='';
+      const zone = under ? under.closest(dropSelector) : null;
+      if(zone!==lastOver){
+        lastOver && lastOver.classList.remove('over');
+        zone && zone.classList.add('over');
+        lastOver = zone;
+      }
+    };
+    const up = ev=>{
+      window.removeEventListener('pointermove',move);
+      window.removeEventListener('pointerup',up);
+      ghost.remove();
+      lastOver && lastOver.classList.remove('over');
+      const under = document.elementFromPoint(ev.clientX, ev.clientY);
+      const zone = under ? under.closest(dropSelector) : null;
+      onEnd && onEnd(el);
+      if(zone) onDropTo(el, zone);
+    };
+    window.addEventListener('pointermove',move,{passive:false});
+    window.addEventListener('pointerup',up);
+  });
+}
+
+/* ============================ 화면: 홈 ============================ */
+function renderHome(){
+  app.innerHTML = `
+  <div class="home">
+    <div class="emoji">🧬</div>
+    <h1>원소 탐험대<span class="en">Bio Elements Explorer</span></h1>
+    <p>미세한 세포 세계로 들어가 <b>생물을 이루는 물질</b>을 탐험해요.<br>
+       원자를 조립하고 분자를 이해하며 4대 영양소 배지를 모으세요!</p>
+    <div class="tags"><span>고2 생명과학</span><span>인터랙티브</span><span>모바일 지원</span></div>
+    <button class="startBtn" id="start">탐험 시작하기 →</button>
+  </div>`;
+  document.getElementById('start').onclick = renderWorldMap;
+}
+
+/* ====================== 화면: 월드맵 ====================== */
+function topbar(title, onBack){
+  const total = STAGES.length;
+  const done = STAGES.filter(s=>stageDone(s.id)).length;
+  const pct = Math.round(done/total*100);
+  const badgeHtml = STAGES.map(s=>`<span class="b ${stageDone(s.id)?'on':''}" title="${s.name}">${s.badge}</span>`).join('');
+  return `
+  <div class="topbar">
+    <button class="backBtn" id="back">← 뒤로</button>
+    <div class="topTitle">${title}</div>
+    <div class="badges">${badgeHtml}</div>
+    <div class="progWrap"><div class="progFill" style="width:${pct}%"></div></div>
+  </div>`;
+}
+
+/* 월드맵 노드 정의 (x,y = 씬 내 백분율 좌표) */
+let MAP = [];
+let heroIndex = 0;
+let mapBusy = false;
+let mapInited = false;
+
+function mapNodes(){
+  return [
+    {id:'start',   name:'출발지',       en:'Base Camp',   ic:'🏕️', x:50, y:90, kind:'base',  color:'#8ea2ff', sub:'여기서 모험을 시작해요!'},
+    {id:'carb',    name:'탄수화물 월드', en:'Carbohydrate',ic:'🍞', x:26, y:73, kind:'stage', color:css('--carb'),    sub:'포도당 조립·당류 분류 + 마을 퀴즈', go:renderCarbStage},
+    {id:'protein', name:'단백질 성',     en:'Protein',     ic:'🧬', x:70, y:57, kind:'stage', color:css('--protein'), sub:'아미노산 분류·펩타이드 결합 + 퀴즈', go:()=>renderVillageStage('protein')},
+    {id:'lipid',   name:'지방 저장소',   en:'Lipid',       ic:'💧', x:27, y:41, kind:'stage', color:css('--lipid'),   sub:'중성지방 조립·포화/불포화 + 퀴즈', go:()=>renderVillageStage('lipid')},
+    {id:'nucleic', name:'정보 도서관',   en:'Nucleic Acid',ic:'📚', x:69, y:25, kind:'stage', color:css('--nucleic'), sub:'염기쌍·뉴클레오타이드 + 퀴즈', go:()=>renderVillageStage('nucleic')},
+    {id:'boss',    name:'최종 보스',     en:'Final Boss',  ic:'👑', x:50, y:9,  kind:'stage', color:'#f5576c', sub:'4대 영양소 통합 시험', go:()=>renderQuiz('boss')},
+  ];
+}
+function nodeUnlocked(nodes, i){
+  if(i<=1) return true;                       // 출발지, 탄수화물은 항상 개방
+  if(nodes[i].id==='boss') return ['carb','protein','lipid','nucleic'].every(id=>stageDone(id));
+  return stageDone(nodes[i-1].id);            // 이전 월드 완료 시 개방
+}
+function nodeSubtitle(n){
+  return n.sub || {base:'여기서 모험을 시작해요!', soon:'준비 중인 월드예요', boss:'4대 영양소를 모두 통합!'}[n.kind] || '';
+}
+const wait = ms => new Promise(r=>setTimeout(r,ms));
+
+/* ---- 만화풍 SVG 에셋 ---- */
+function cloudSVG(){
+  return `<svg viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">
+    <g fill="#ffffff"><ellipse cx="34" cy="40" rx="30" ry="19"/><ellipse cx="66" cy="30" rx="27" ry="22"/>
+    <ellipse cx="92" cy="41" rx="23" ry="17"/><rect x="20" y="38" width="80" height="20" rx="10"/></g></svg>`;
+}
+
+// 커스텀 탐험가 캐릭터
+function heroSVG(){
+  return `<svg viewBox="0 0 44 58" xmlns="http://www.w3.org/2000/svg">
+    <g class="leg legL"><rect x="15" y="41" width="5.5" height="11" rx="2.5" fill="#3a3a5c"/>
+      <ellipse cx="17.7" cy="53" rx="4" ry="2.4" fill="#2a2a44"/></g>
+    <g class="leg legR"><rect x="23.5" y="41" width="5.5" height="11" rx="2.5" fill="#3a3a5c"/>
+      <ellipse cx="26.3" cy="53" rx="4" ry="2.4" fill="#2a2a44"/></g>
+    <rect x="7" y="28" width="6" height="13" rx="3" fill="#3ec6bd"/>
+    <rect x="31" y="28" width="6" height="13" rx="3" fill="#3ec6bd"/>
+    <rect x="11" y="26" width="22" height="19" rx="9" fill="#4ecdc4"/>
+    <line x1="22" y1="27" x2="22" y2="44" stroke="#38b0a8" stroke-width="1.3"/>
+    <circle cx="22" cy="33" r="1.1" fill="#fff"/><circle cx="22" cy="38" r="1.1" fill="#fff"/>
+    <circle cx="22" cy="17" r="11.5" fill="#ffd9b3"/>
+    <path d="M10.5,16 Q22,1 33.5,16 Z" fill="#ff6b6b"/>
+    <rect x="9.5" y="14.6" width="25" height="3.4" rx="1.7" fill="#e85b5b"/>
+    <circle cx="22" cy="5.4" r="1.9" fill="#ffd23f"/>
+    <circle cx="18" cy="18" r="1.7" fill="#3a3a4a"/><circle cx="26" cy="18" r="1.7" fill="#3a3a4a"/>
+    <circle cx="15.4" cy="21" r="1.7" fill="#ff9aa2" opacity=".6"/>
+    <circle cx="28.6" cy="21" r="1.7" fill="#ff9aa2" opacity=".6"/>
+    <path d="M18,22.5 Q22,25.6 26,22.5" stroke="#3a3a4a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  </svg>`;
+}
+
+// 각 월드 노드의 미니 일러스트 (섬 + 랜드마크)
+function nodeArt(id, done){
+  const island = `
+    <ellipse cx="40" cy="67" rx="29" ry="8" fill="#33507a" opacity=".18"/>
+    <path d="M13,60 Q40,83 67,60 Z" fill="#b07a44"/>
+    <path d="M13,60 Q40,74 67,60" fill="none" stroke="#9a672f" stroke-width="1.5"/>
+    <ellipse cx="40" cy="60" rx="27" ry="8.5" fill="#8fd15a"/>
+    <ellipse cx="40" cy="58.5" rx="27" ry="6.5" fill="#a7e06a"/>`;
+  const art = {
+    start: `
+      <path d="M23,57 L40,29 L57,57 Z" fill="#ff8a5c"/>
+      <path d="M40,29 L57,57 L47,57 Z" fill="#ef6f43"/>
+      <path d="M35,57 L40,41 L45,57 Z" fill="#5a3b2a"/>
+      <line x1="40" y1="29" x2="40" y2="19" stroke="#8a5a3a" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M40,19 L50,22.5 L40,26 Z" fill="#ffd23f"/>`,
+    carb: `
+      <path d="M20,55 Q20,33 40,33 Q60,33 60,55 Z" fill="#e8b661"/>
+      <path d="M20,55 Q20,33 40,33 Q60,33 60,55 Z" fill="none" stroke="#c98f3c" stroke-width="2"/>
+      <ellipse cx="40" cy="35" rx="20" ry="6.5" fill="#f2cd88"/>
+      <line x1="33" y1="40" x2="28" y2="51" stroke="#c98f3c" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="41" y1="39" x2="36" y2="51" stroke="#c98f3c" stroke-width="2.2" stroke-linecap="round"/>
+      <line x1="49" y1="40" x2="44" y2="51" stroke="#c98f3c" stroke-width="2.2" stroke-linecap="round"/>`,
+    protein: `
+      <rect x="23" y="41" width="34" height="17" fill="#ff6b6b"/>
+      <rect x="23" y="37" width="5" height="5" fill="#ff6b6b"/><rect x="32" y="37" width="5" height="5" fill="#ff6b6b"/>
+      <rect x="41" y="37" width="5" height="5" fill="#ff6b6b"/><rect x="50" y="37" width="5" height="5" fill="#ff6b6b"/>
+      <rect x="45" y="30" width="12" height="28" fill="#ff8787"/>
+      <rect x="45" y="27" width="4" height="4" fill="#ff8787"/><rect x="53" y="27" width="4" height="4" fill="#ff8787"/>
+      <line x1="51" y1="27" x2="51" y2="19" stroke="#c94b4b" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M51,19 L60,22 L51,25 Z" fill="#ffd23f"/>
+      <rect x="34" y="47" width="9" height="11" rx="4.5" fill="#7a2e2e"/>`,
+    lipid: `
+      <path d="M40,30 C53,45 55,53 40,58 C25,53 27,45 40,30 Z" fill="#ffb04d"/>
+      <path d="M40,30 C53,45 55,53 40,58 C25,53 27,45 40,30 Z" fill="none" stroke="#e08f2e" stroke-width="1.6"/>
+      <ellipse cx="34" cy="47" rx="3" ry="5.5" fill="#ffe3ab" opacity=".85"/>`,
+    nucleic: `
+      <rect x="29" y="55" width="22" height="5" rx="1.5" fill="#3a5bd0"/>
+      <path d="M31,31 C48,39 48,49 31,57" fill="none" stroke="#4a6cf7" stroke-width="3.4" stroke-linecap="round"/>
+      <path d="M49,31 C32,39 32,49 49,57" fill="none" stroke="#7792ff" stroke-width="3.4" stroke-linecap="round"/>
+      <line x1="35" y1="35" x2="45" y2="35" stroke="#aebeff" stroke-width="2" stroke-linecap="round"/>
+      <line x1="33" y1="44" x2="47" y2="44" stroke="#aebeff" stroke-width="2" stroke-linecap="round"/>
+      <line x1="35" y1="53" x2="45" y2="53" stroke="#aebeff" stroke-width="2" stroke-linecap="round"/>`,
+    boss: `
+      <rect x="26" y="41" width="28" height="17" fill="#6b4f9e"/>
+      <rect x="31" y="32" width="18" height="11" fill="#5a3f8c"/>
+      <rect x="35" y="47" width="10" height="11" rx="1" fill="#3d2b63"/>
+      <path d="M30,32 L33,23 L37,29 L40,21 L43,29 L47,23 L50,32 Z" fill="#ffd23f" stroke="#e0a800" stroke-width="1"/>
+      <circle cx="40" cy="27" r="1.7" fill="#f5576c"/>`
+  }[id] || '';
+  // 완료한 월드: 섬에 황금 깃발 + 반짝임
+  const doneMark = done ? `
+    <line x1="19" y1="59" x2="19" y2="45" stroke="#7a5a2a" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M19,45 L29,48 L19,51 Z" fill="#ffd23f" stroke="#e0a800" stroke-width=".6"/>
+    <g fill="#fff7c0"><circle cx="60" cy="34" r="1.4"/><circle cx="55" cy="28" r="1"/><circle cx="63" cy="42" r="1"/></g>` : '';
+  return `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">${island}${art}${doneMark}</svg>`;
+}
+
+function renderWorldMap(){
+  const nodes = MAP = mapNodes();
+  let maxU = 0;
+  nodes.forEach((n,i)=>{ if(nodeUnlocked(nodes,i)) maxU=i; });
+  if(!mapInited){ heroIndex = 0; mapInited = true; }   // 첫 진입은 출발지에서 걸어 올라감
+  if(heroIndex > maxU) heroIndex = maxU;
+
+  // 구역별 컬러 바이옴 (스테이지 색으로 물든 영역)
+  // 구역별 컬러 바이옴(은은하게 물든 영역)
+  const biomes = nodes.filter(n=>n.id!=='start')
+    .map(n=>`<div class="biome" style="left:${n.x}%;top:${n.y}%;background:radial-gradient(circle,${n.color},transparent 70%)"></div>`).join('');
+  // 만화풍 구름
+  const clouds = [
+    {c:'c1',x:14,y:12,w:120},{c:'c2',x:66,y:8,w:150},{c:'c3',x:40,y:24,w:96}
+  ].map(o=>`<div class="cloud ${o.c}" style="left:${o.x}%;top:${o.y}%;width:${o.w}px">${cloudSVG()}</div>`).join('');
+  // 반짝이는 입자
+  const particles = Array.from({length:6}).map((_,i)=>{
+    const x=(i*37+9)%88+6, y=(i*53+18)%70+8, cls='p'+(i%4), delay=(i*0.7)%5;
+    return `<div class="particle ${cls}" style="left:${x}%;top:${y}%;animation-delay:${delay}s"></div>`;
+  }).join('');
+
+  app.innerHTML = topbar('원소 월드맵 🗺️') + `
+  <div class="mapWrap">
+    <div class="mapHead">
+      <h2>🗺️ 원소 월드맵</h2>
+      <p>탐험가를 움직여 각 월드에 입장하세요 · 아래 ⬆️⬇️ 또는 지점을 탭</p>
+    </div>
+    <div class="mapScene" id="scene">
+      <div class="sun"></div>
+      <svg class="hills" viewBox="0 0 400 130" preserveAspectRatio="none">
+        <path d="M0,58 C70,26 130,72 210,50 C290,28 350,66 400,44 L400,130 L0,130 Z" fill="#b7e483"/>
+        <path d="M0,84 C90,54 170,96 250,72 C330,50 380,88 400,70 L400,130 L0,130 Z" fill="#8fd15a"/>
+        <path d="M0,108 C100,88 180,118 260,100 C330,86 380,110 400,100 L400,130 L0,130 Z" fill="#6cbf43"/>
+      </svg>
+      ${biomes}${clouds}${particles}
+      <svg class="roadSvg" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <polyline id="roadBase" fill="none" stroke="rgba(90,60,30,.28)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        <polyline id="roadMid" fill="none" stroke="#e9cfa4" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        <polyline id="roadDash" fill="none" stroke="#fff" stroke-width="2.4" stroke-dasharray="0.1 6.5" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+      </svg>
+      <div class="hero" id="hero">${heroSVG()}</div>
+    </div>
+    <div class="mapAction" id="action"></div>
+  </div>`;
+  document.getElementById('back').onclick = ()=>{ document.onkeydown=null; renderHome(); };
+
+  const scene = document.getElementById('scene');
+  const pts = nodes.map(n=>`${n.x},${n.y}`).join(' ');
+  scene.querySelectorAll('.roadSvg polyline').forEach(p=>p.setAttribute('points', pts));
+
+  nodes.forEach((n,i)=>{
+    const unlocked = nodeUnlocked(nodes,i);
+    const done = n.kind==='stage' && stageDone(n.id);
+    const el = document.createElement('div');
+    el.className = `node ${unlocked?'':'locked'} ${done?'done':''}`;
+    el.style.left = n.x+'%'; el.style.top = n.y+'%';
+    const badge = done ? '<span class="cornerBadge done">✓</span>'
+                : (!unlocked ? '<span class="cornerBadge lock">🔒</span>' : '');
+    el.innerHTML = `
+      <div class="landmark">${nodeArt(n.id, done)}${badge}</div>
+      <div class="nlabel">${n.name}</div>`;
+    el.onclick = ()=>onNodeTap(i);
+    scene.appendChild(el);
+  });
+
+  positionHero(false);
+  markCurrentNode();
+  updateMapAction();
+
+  document.onkeydown = (e)=>{
+    if(mapBusy) return;
+    if(e.key==='ArrowUp'){ e.preventDefault(); onNodeTap(heroIndex+1); }
+    else if(e.key==='ArrowDown'){ e.preventDefault(); onNodeTap(heroIndex-1); }
+    else if(e.key==='Enter'){ enterNode(heroIndex); }
+  };
+}
+
+function positionHero(animate){
+  const hero = document.getElementById('hero'); if(!hero) return;
+  const n = MAP[heroIndex];
+  if(!animate){
+    hero.style.transition='none';
+    hero.style.left=n.x+'%'; hero.style.top=n.y+'%';
+    requestAnimationFrame(()=>{ hero.style.transition=''; });
+  }else{
+    hero.style.left=n.x+'%'; hero.style.top=n.y+'%';
+  }
+}
+function markCurrentNode(){
+  document.querySelectorAll('.node').forEach((el,i)=>el.classList.toggle('current', i===heroIndex));
+}
+
+function onNodeTap(i){
+  if(mapBusy) return;
+  if(i<0 || i>=MAP.length) return;
+  if(!nodeUnlocked(MAP,i)){ toast('아직 잠겨 있어요. 이전 월드를 먼저 완료하세요 🔒'); return; }
+  if(i===heroIndex){ enterNode(i); return; }
+  walkTo(i);
+}
+
+async function walkTo(target){
+  if(mapBusy || target===heroIndex) return;
+  if(!nodeUnlocked(MAP,target)){ toast('아직 잠겨 있어요 🔒'); return; }
+  mapBusy = true;
+  const hero = document.getElementById('hero');
+  hero.classList.add('walking');
+  const step = target>heroIndex ? 1 : -1;
+  while(heroIndex!==target){
+    heroIndex += step;
+    positionHero(true);
+    markCurrentNode();
+    await wait(820);
+  }
+  hero.classList.remove('walking');
+  mapBusy = false;
+  updateMapAction();
+}
+
+function updateMapAction(){
+  const el = document.getElementById('action'); if(!el) return;
+  const n = MAP[heroIndex];
+  const unlocked = nodeUnlocked(MAP, heroIndex);
+  const nextUnlocked = heroIndex<MAP.length-1 && nodeUnlocked(MAP, heroIndex+1);
+  let btn='';
+  if(n.kind==='stage' && unlocked){
+    btn = `<button class="enterBtn" id="enter">${stageDone(n.id)?'다시 입장 →':'입장하기 →'}</button>`;
+  }else if(n.kind==='soon'){
+    btn = `<button class="enterBtn soon" id="enter">곧 공개 🔒</button>`;
+  }
+  el.innerHTML = `
+    <div class="info"><h3>${n.ic} ${n.name} <span class="en">${n.en}</span></h3>
+      <div class="sub">${nodeSubtitle(n)}</div></div>
+    <div class="nav">
+      <button class="navBtn" id="down" ${heroIndex<=0?'disabled':''}>⬇️</button>
+      <button class="navBtn" id="up" ${nextUnlocked?'':'disabled'}>⬆️</button>
+    </div>
+    ${btn}`;
+  const up=document.getElementById('up'); if(up) up.onclick=()=>onNodeTap(heroIndex+1);
+  const down=document.getElementById('down'); if(down) down.onclick=()=>onNodeTap(heroIndex-1);
+  const enter=document.getElementById('enter'); if(enter) enter.onclick=()=>enterNode(heroIndex);
+}
+
+function enterNode(i){
+  if(mapBusy) return;
+  const n = MAP[i];
+  if(!nodeUnlocked(MAP,i)){ toast('아직 잠겨 있어요 🔒'); return; }
+  if(n.kind==='stage' && n.go){ document.onkeydown=null; n.go(); }
+  else if(n.kind==='base'){ toast('출발지예요. 위쪽 월드로 올라가 보세요! ⬆️'); }
+  else if(n.kind==='soon'){ toast(`${n.name}은(는) 곧 공개돼요! 지금은 탄수화물 월드를 즐겨보세요 🍞`); }
+}
+
+let toastTimer=null;
+function toast(msg){
+  let t=document.querySelector('.toast');
+  if(!t){ t=document.createElement('div'); t.className='toast'; document.body.appendChild(t); }
+  t.textContent=msg;
+  requestAnimationFrame(()=>t.classList.add('show'));
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+/* ==================== 탄수화물 스테이지 (미니게임 목록) ==================== */
+const CARB_GAMES = [
+  {id:'atom',    ic:'🔆', name:'광합성 반응로',      en:'Photosynthesis Reactor', sub:'CO₂+H₂O로 포도당 합성'},
+  {id:'sort',    ic:'🗂️', name:'당류 분류소',        en:'Sort the Sugars', sub:'단당류·이당류·다당류로 나누기'},
+  {id:'role',    ic:'🔗', name:'다당류의 역할',       en:'Polysaccharide Roles', sub:'녹말·글리코겐·셀룰로스 짝짓기'},
+  {id:'quiz',    ic:'🧠', name:'마을 퀴즈',           en:'Village Quiz', sub:'탄수화물 개념 3문제 도전'},
+];
+let carbProgress = {}; // 세션 내 진행
+
+function renderCarbStage(){
+  app.innerHTML = topbar('탄수화물 월드 🍞') + `
+  <div class="wrap">
+    <div class="intro">
+      <h2>탄수화물 월드 <span class="en">Carbohydrate World</span></h2>
+      <p class="lead">탄수화물은 <b>탄소(C)</b>와 <b>물(H₂O)</b>이 결합한 물질이라 이름이 "탄소의 수화물"이에요.
+      실험식은 <b>(CH₂O)ₙ</b> — C:H:O = <b>1:2:1</b>. 네 가지 미션을 모두 완료하면 <b>⚡ 에너지 배지</b>를 얻어요!</p>
+    </div>
+    <div class="grid" id="games"></div>
+  </div>`;
+  document.getElementById('back').onclick = renderWorldMap;
+  const g = document.getElementById('games');
+  CARB_GAMES.forEach((game,i)=>{
+    const done = !!carbProgress[game.id];
+    const el=document.createElement('div');
+    el.className=`card ${done?'done':'play'}`;
+    el.style.borderColor = done?css('--ok'):css('--carb');
+    el.innerHTML=`
+      <div class="chip">${done?'완료 ✓':'미션 '+(i+1)}</div>
+      <div class="ic">${game.ic}</div>
+      <h3>${game.name}<div class="en">${game.en}</div></h3>
+      <div class="sub">${game.sub}</div>
+      <span class="go">${done?'다시 하기':'도전 →'}</span>`;
+    el.onclick=()=>CARB_ROUTER[game.id]();
+    g.appendChild(el);
+  });
+
+  // 전부 완료 시 배지 안내 + 클리어 화면 이동
+  if(CARB_GAMES.every(x=>carbProgress[x.id]) && !stageDone('carb')){
+    save.done['carb']=true; persist();
+  }
+  if(stageDone('carb')){
+    const note=document.createElement('div');
+    note.className='goal';
+    note.style.marginTop='18px';
+    note.innerHTML=`🎉 <b>⚡ 에너지 배지 획득!</b> 탄수화물 월드의 네 미션을 모두 완료했어요.
+      <div class="btnRow" style="margin-top:12px"><button class="primary" id="toClearBtn">⚡ 배지 받고 월드맵으로 →</button></div>`;
+    document.querySelector('.wrap').appendChild(note);
+    document.getElementById('toClearBtn').onclick=renderCarbClear;
+  }
+}
+
+function gameShell(title, en, num, goalHtml, bodyId){
+  app.innerHTML = topbar('탄수화물 월드 🍞') + `
+  <div class="wrap">
+    <div class="panel">
+      <div class="qnum">${num}</div>
+      <h2 class="gh">${title} <span class="en">${en}</span></h2>
+      <div class="goal">${goalHtml}</div>
+      <div id="${bodyId}"></div>
+    </div>
+  </div>`;
+  document.getElementById('back').onclick = renderCarbStage;
+}
+
+function markDone(id){ carbProgress[id]=true; }
+
+/* ---- 반응물 분자 미니 SVG ---- */
+function molCO2(){return `<svg viewBox="0 0 66 26" width="56" xmlns="http://www.w3.org/2000/svg">
+  <line x1="14" y1="13" x2="52" y2="13" stroke="#888" stroke-width="3"/>
+  <circle cx="12" cy="13" r="10" fill="#e5484d"/><text x="12" y="17" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold">O</text>
+  <circle cx="33" cy="13" r="11" fill="#3b3b47"/><text x="33" y="17" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold">C</text>
+  <circle cx="54" cy="13" r="10" fill="#e5484d"/><text x="54" y="17" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold">O</text></svg>`;}
+function molH2O(){return `<svg viewBox="0 0 48 40" width="40" xmlns="http://www.w3.org/2000/svg">
+  <line x1="24" y1="26" x2="10" y2="13" stroke="#888" stroke-width="3"/><line x1="24" y1="26" x2="38" y2="13" stroke="#888" stroke-width="3"/>
+  <circle cx="24" cy="27" r="11" fill="#e5484d"/><text x="24" y="31" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold">O</text>
+  <circle cx="9" cy="11" r="7" fill="#5aa9e6"/><text x="9" y="14" text-anchor="middle" fill="#fff" font-size="8" font-weight="bold">H</text>
+  <circle cx="39" cy="11" r="7" fill="#5aa9e6"/><text x="39" y="14" text-anchor="middle" fill="#fff" font-size="8" font-weight="bold">H</text></svg>`;}
+function molO2(){return `<svg viewBox="0 0 40 24" width="34" xmlns="http://www.w3.org/2000/svg">
+  <line x1="12" y1="12" x2="28" y2="12" stroke="#888" stroke-width="3"/>
+  <circle cx="12" cy="12" r="10" fill="#e5484d"/><text x="12" y="16" text-anchor="middle" fill="#fff" font-size="9" font-weight="bold">O</text>
+  <circle cx="28" cy="12" r="10" fill="#e5484d"/><text x="28" y="16" text-anchor="middle" fill="#fff" font-size="9" font-weight="bold">O</text></svg>`;}
+
+/* ---------------- 미션 1: 광합성 반응로 ---------------- */
+function gameAtom(){
+  gameShell('광합성 반응로','Photosynthesis Reactor','미션 1 · 반응 조립',
+    '☀️ 빛 에너지로 <b>CO₂</b>와 <b>H₂O</b>를 엽록체 반응로에 넣어 포도당을 합성하세요.<br><b>6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂</b> (넣은 분자를 누르면 빼기)',
+    'atomBody');
+  const body=document.getElementById('atomBody');
+  const state={co2:0, h2o:0, done:false};
+  const CAP=8;
+  body.innerHTML=`
+    <div class="reactorWrap">
+      <div class="sources">
+        <div class="srcCol"><h4>CO₂ 공급 <span class="en">Carbon dioxide</span></h4>
+          <div class="mol" data-mol="co2">${molCO2()}</div><small>끌어넣기 · 탭 +1</small></div>
+        <div class="srcCol"><h4>H₂O 공급 <span class="en">Water</span></h4>
+          <div class="mol" data-mol="h2o">${molH2O()}</div><small>끌어넣기 · 탭 +1</small></div>
+      </div>
+      <div class="reactor dz" id="reactor" data-drop>
+        <div class="sun">☀️</div>
+        <div class="reactorLabel">🟢 엽록체 반응로</div>
+        <div class="molBucket" id="bucket"></div>
+      </div>
+    </div>
+    <div class="counts">
+      <div class="count" id="cCO2"><div class="n">0/6</div><div class="lab2">CO₂</div></div>
+      <div class="count" id="cH2O"><div class="n">0/6</div><div class="lab2">H₂O</div></div>
+    </div>
+    <div class="atomTally" id="tally"></div>
+    <div class="feedback" id="fb"></div>
+    <div class="btnRow">
+      <button class="ghost" id="reset">비우기</button>
+      <button class="primary" id="react">☀️ 반응 시작</button>
+    </div>
+    <div id="product"></div>`;
+
+  const bucket=document.getElementById('bucket');
+  function draw(){
+    bucket.innerHTML='';
+    const add=(type,svg)=>{ for(let i=0;i<state[type];i++){
+      const chip=document.createElement('div'); chip.className='chip'; chip.innerHTML=svg;
+      chip.onclick=()=>{ if(state.done)return; state[type]--; draw(); };
+      bucket.appendChild(chip);
+    }};
+    add('co2',molCO2()); add('h2o',molH2O());
+    const setC=(id,cur)=>{const el=document.getElementById(id); el.querySelector('.n').textContent=cur+'/6'; el.classList.toggle('ok',cur===6);};
+    setC('cCO2',state.co2); setC('cH2O',state.h2o);
+    const C=state.co2, H=state.h2o*2, O=state.co2*2+state.h2o;
+    document.getElementById('tally').innerHTML=`반응로 속 원자 → 탄소 C <b>${C}</b> · 수소 H <b>${H}</b> · 산소 O <b>${O}</b>`;
+  }
+  draw();
+
+  document.querySelectorAll('.mol').forEach(m=>{
+    const add=()=>{ if(state.done)return; const t=m.dataset.mol; if(state[t]<CAP){state[t]++;draw();document.getElementById('fb').className='feedback';} };
+    makeDraggable(m,{dropSelector:'[data-drop]', onDropTo:add});
+    m.onclick=add;
+  });
+
+  document.getElementById('reset').onclick=()=>{ if(state.done)return; state.co2=state.h2o=0; draw(); document.getElementById('fb').className='feedback'; };
+  document.getElementById('react').onclick=()=>{
+    const fb=document.getElementById('fb');
+    if(state.done) return;
+    if(state.co2===6 && state.h2o===6){
+      state.done=true;
+      fb.className='feedback correct';
+      fb.innerHTML='광합성 성공! 🎉 좌변·우변 원자 수(C 6 · H 12 · O 18)가 완벽히 보존돼요.';
+      reactAnimation();
+      markDone('atom');
+    }else{
+      fb.className='feedback incorrect';
+      const msg=[];
+      if(state.co2!==6) msg.push(`CO₂ ${state.co2}→6`);
+      if(state.h2o!==6) msg.push(`H₂O ${state.h2o}→6`);
+      fb.innerHTML=`원자 수가 맞지 않아요. <b>CO₂ 6개 + H₂O 6개</b>가 필요해요. (${msg.join(', ')})`;
+    }
+  };
+
+  function reactAnimation(){
+    const reactor=document.getElementById('reactor');
+    bucket.innerHTML='';
+    // 산소 방울 6개 방출
+    for(let i=0;i<6;i++){
+      const b=document.createElement('div'); b.className='o2bubble'; b.innerHTML=molO2();
+      b.style.left=(12+i*13)+'%'; b.style.animationDelay=(i*0.12)+'s';
+      reactor.appendChild(b);
+    }
+    // 포도당 생성 표시
+    const glu=document.createElement('div'); glu.className='productPop';
+    glu.style.cssText='margin-top:8px;text-align:center;font-weight:800;color:#4a7a2a';
+    glu.innerHTML='✨ 포도당 C₆H₁₂O₆ 1분자 생성 + 산소(O₂) 6분자 방출 ✨';
+    bucket.appendChild(glu);
+    showGlucoseReward(body);
+  }
+}
+
+function showGlucoseReward(body){
+  if(document.getElementById('glucoseReward')) return;
+  const div=document.createElement('div');
+  div.id='glucoseReward';
+  div.className='structBox';
+  div.style.marginTop='18px';
+  div.innerHTML = glucoseSVG() + `
+    <div class="hint" style="text-align:left">💡 광합성으로 만든 <b>포도당(C₆H₁₂O₆)</b>은 물에서 대부분 <b>육각 고리(피란오스) 구조</b>로 존재해요.
+    탄수화물은 C:H:O = <b>1:2:1</b>이고, 같은 식이라도 배열이 다르면 <b>과당·갈락토스</b> 같은 이성질체가 됩니다.</div>
+    <div class="btnRow"><button class="primary" id="next1">다음 미션 →</button></div>`;
+  body.appendChild(div);
+  document.getElementById('next1').onclick=gameSort;
+}
+
+// 과학적으로 충실한 α-D-포도당 하워스 투영
+function glucoseSVG(){
+  return `
+  <svg viewBox="0 0 320 240" xmlns="http://www.w3.org/2000/svg" aria-label="포도당 고리 구조">
+    <!-- 고리 -->
+    <polygon points="160,70 235,110 235,175 160,205 85,175 85,110"
+      fill="#fff7df" stroke="#c99400" stroke-width="2.5"/>
+    <!-- 앞쪽 굵은 결합 (하워스 강조) -->
+    <line x1="85" y1="175" x2="160" y2="205" stroke="#7a5a00" stroke-width="6"/>
+    <line x1="160" y1="205" x2="235" y2="175" stroke="#7a5a00" stroke-width="6"/>
+    <!-- 고리 원자 라벨 -->
+    <circle cx="160" cy="70" r="15" fill="#e5484d"/><text x="160" y="75" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">O</text>
+    <circle cx="235" cy="110" r="14" fill="#3b3b47"/><text x="235" y="115" text-anchor="middle" fill="#fff" font-size="12">C1</text>
+    <circle cx="235" cy="175" r="14" fill="#3b3b47"/><text x="235" y="180" text-anchor="middle" fill="#fff" font-size="12">C2</text>
+    <circle cx="160" cy="205" r="14" fill="#3b3b47"/><text x="160" y="210" text-anchor="middle" fill="#fff" font-size="12">C3</text>
+    <circle cx="85"  cy="175" r="14" fill="#3b3b47"/><text x="85"  y="180" text-anchor="middle" fill="#fff" font-size="12">C4</text>
+    <circle cx="85"  cy="110" r="14" fill="#3b3b47"/><text x="85"  y="115" text-anchor="middle" fill="#fff" font-size="12">C5</text>
+    <!-- 곁가지 : CH2OH, OH -->
+    <line x1="85" y1="110" x2="70" y2="55" stroke="#c99400" stroke-width="2"/>
+    <text x="66" y="46" text-anchor="middle" fill="#2a2540" font-size="12" font-weight="bold">CH₂OH</text>
+    <line x1="235" y1="110" x2="270" y2="120" stroke="#c99400" stroke-width="2"/>
+    <text x="286" y="123" text-anchor="middle" fill="#2a2540" font-size="12">OH</text>
+    <line x1="235" y1="175" x2="262" y2="200" stroke="#c99400" stroke-width="2"/>
+    <text x="278" y="205" text-anchor="middle" fill="#2a2540" font-size="12">OH</text>
+    <line x1="160" y1="205" x2="160" y2="232" stroke="#c99400" stroke-width="2"/>
+    <text x="160" y="232" text-anchor="middle" fill="#2a2540" font-size="12">OH</text>
+    <line x1="85" y1="175" x2="55" y2="200" stroke="#c99400" stroke-width="2"/>
+    <text x="40" y="205" text-anchor="middle" fill="#2a2540" font-size="12">OH</text>
+    <text x="160" y="150" text-anchor="middle" fill="#7a5a00" font-size="13" font-weight="bold">포도당</text>
+    <text x="160" y="167" text-anchor="middle" fill="#a08040" font-size="10">Glucose · C₆H₁₂O₆</text>
+  </svg>`;
+}
+
+/* ---------------- 미션 2: 당류 분류소 ---------------- */
+const SUGARS = [
+  {ko:'포도당', en:'Glucose', type:'mono'},
+  {ko:'과당',   en:'Fructose', type:'mono'},
+  {ko:'갈락토스',en:'Galactose', type:'mono'},
+  {ko:'엿당',   en:'Maltose', type:'di'},
+  {ko:'설탕',   en:'Sucrose', type:'di'},
+  {ko:'젖당',   en:'Lactose', type:'di'},
+  {ko:'녹말',   en:'Starch', type:'poly'},
+  {ko:'글리코겐',en:'Glycogen', type:'poly'},
+  {ko:'셀룰로스',en:'Cellulose', type:'poly'},
+];
+const SUGAR_BINS=[
+  {type:'mono', ko:'단당류', en:'Monosaccharide', desc:'더 못 쪼개지는 기본 당 (1개)'},
+  {type:'di',   ko:'이당류', en:'Disaccharide',  desc:'단당류 2개가 결합'},
+  {type:'poly', ko:'다당류', en:'Polysaccharide', desc:'단당류 수백~수천 개'},
+];
+
+function gameSort(){
+  gameShell('당류 분류소','Sort the Sugars','미션 2 · 드래그 분류',
+    '아래 9가지 당을 <b>단당류·이당류·다당류</b> 통으로 끌어다 넣으세요. 모두 실제 당이니 성질로 판단!',
+    'sortBody');
+  const body=document.getElementById('sortBody');
+  const shuffled=[...SUGARS].map((s,i)=>({...s,uid:'s'+i})).sort(()=>Math.random()-.5);
+  body.innerHTML=`
+    <div class="pool" id="pool"></div>
+    <div class="bins">
+      ${SUGAR_BINS.map(b=>`
+        <div class="bin" data-drop data-type="${b.type}">
+          <h4>${b.ko}<div class="en">${b.en}</div></h4>
+          <div class="desc">${b.desc}</div>
+          <div class="drop"></div>
+        </div>`).join('')}
+    </div>
+    <div class="feedback" id="fb"></div>
+    <div class="btnRow">
+      <button class="ghost" id="reset">다시</button>
+      <button class="primary" id="submit">채점하기</button>
+    </div>`;
+
+  const pool=document.getElementById('pool');
+  function makeToken(s){
+    const t=document.createElement('div');
+    t.className='token'; t.dataset.type=s.type; t.dataset.uid=s.uid;
+    t.innerHTML=`${s.ko}<span class="en">${s.en}</span>`;
+    makeDraggable(t,{
+      dropSelector:'[data-drop]',
+      onDropTo:(el,zone)=>{ zone.querySelector('.drop').appendChild(el); el.classList.remove('placed'); document.getElementById('fb').className='feedback'; }
+    });
+    return t;
+  }
+  shuffled.forEach(s=>pool.appendChild(makeToken(s)));
+  // pool도 드롭 대상
+  pool.setAttribute('data-drop','');
+
+  document.getElementById('reset').onclick=()=>gameSort();
+  document.getElementById('submit').onclick=()=>{
+    const fb=document.getElementById('fb');
+    let placed=0, correct=0;
+    document.querySelectorAll('.bin').forEach(bin=>{
+      const btype=bin.dataset.type;
+      bin.querySelectorAll('.token').forEach(t=>{
+        placed++;
+        if(t.dataset.type===btype){correct++;t.classList.add('placed');}
+        else t.classList.remove('placed');
+      });
+    });
+    if(placed<SUGARS.length){
+      fb.className='feedback incorrect';
+      fb.innerHTML=`아직 <b>${SUGARS.length-placed}개</b>가 통에 담기지 않았어요.`;
+      return;
+    }
+    if(correct===SUGARS.length){
+      fb.className='feedback correct';
+      fb.innerHTML='완벽해요! 🎉 단당류(포도당·과당·갈락토스), 이당류(엿당·설탕·젖당), 다당류(녹말·글리코겐·셀룰로스) 분류 성공!';
+      markDone('sort');
+      if(!document.getElementById('next2')){
+        const r=document.createElement('div'); r.className='btnRow';
+        r.innerHTML='<button class="primary" id="next2">다음 미션 →</button>';
+        body.appendChild(r);
+        document.getElementById('next2').onclick=gameRole;
+      }
+    }else{
+      fb.className='feedback incorrect';
+      fb.innerHTML=`${correct}/${SUGARS.length} 정답. 초록 테두리가 아닌 카드를 다시 옮겨 보세요. <br><span class="en">힌트: 설탕=포도당+과당, 젖당=포도당+갈락토스</span>`;
+    }
+  };
+}
+
+/* ---------------- 미션 3: 다당류의 역할 ---------------- */
+const ROLES=[
+  {ko:'녹말', en:'Starch', ic:'🌾', desc:'식물이 만든 에너지 저장 물질 (씨앗·뿌리)'},
+  {ko:'글리코겐', en:'Glycogen', ic:'🍖', desc:'동물의 에너지 저장 물질 (간·근육)'},
+  {ko:'셀룰로스', en:'Cellulose', ic:'🌿', desc:'식물 세포벽을 이루며 사람은 소화 못함 (식이섬유)'},
+];
+function gameRole(){
+  gameShell('다당류의 역할','Polysaccharide Roles','미션 3 · 짝 맞추기',
+    '아래 <b>설명 카드</b>를 알맞은 다당류로 끌어다 놓으세요. 셋 다 포도당으로 이루어졌지만 역할이 달라요!',
+    'roleBody');
+  const body=document.getElementById('roleBody');
+  const desc=[...ROLES].map((r,i)=>({...r,uid:'r'+i})).sort(()=>Math.random()-.5);
+  body.innerHTML=`
+    <div class="pool" id="pool"></div>
+    <div class="matchRow">
+      ${ROLES.map(r=>`
+        <div class="matchItem">
+          <div class="matchTarget"><span class="big">${r.ic}</span>
+            <div><div class="mt-name">${r.ko}</div><div class="en">${r.en}</div></div></div>
+          <div class="matchDrop" data-drop data-key="${r.ko}"><span class="ph">여기에 설명을 놓기</span></div>
+        </div>`).join('')}
+    </div>
+    <div class="feedback" id="fb"></div>
+    <div class="btnRow">
+      <button class="ghost" id="reset">다시</button>
+      <button class="primary" id="submit">채점하기</button>
+    </div>`;
+  const pool=document.getElementById('pool');
+  desc.forEach(r=>{
+    const t=document.createElement('div');
+    t.className='token'; t.dataset.key=r.ko; t.style.maxWidth='260px';
+    t.innerHTML=r.desc;
+    makeDraggable(t,{
+      dropSelector:'[data-drop]',
+      onDropTo:(el,zone)=>{
+        // 기존에 있던 카드는 pool로 돌려보냄
+        const drop = zone.classList.contains('matchDrop')?zone:zone;
+        if(zone.id==='pool'){ pool.appendChild(el); el.classList.remove('placed'); }
+        else {
+          const prev=zone.querySelector('.token');
+          if(prev) pool.appendChild(prev);
+          const ph=zone.querySelector('.ph'); if(ph) ph.style.display='none';
+          zone.appendChild(el); zone.classList.add('filled');
+        }
+        document.getElementById('fb').className='feedback';
+      }
+    });
+    pool.appendChild(t);
+  });
+  pool.setAttribute('data-drop','');
+
+  document.getElementById('reset').onclick=()=>gameRole();
+  document.getElementById('submit').onclick=()=>{
+    const fb=document.getElementById('fb');
+    const drops=[...document.querySelectorAll('.matchDrop')];
+    if(drops.some(d=>!d.querySelector('.token'))){
+      fb.className='feedback incorrect'; fb.innerHTML='세 칸을 모두 채워 주세요.'; return;
+    }
+    const allOk=drops.every(d=>d.querySelector('.token').dataset.key===d.dataset.key);
+    if(allOk){
+      fb.className='feedback correct';
+      fb.innerHTML='정답! 🎉 <b>녹말=식물 저장, 글리코겐=동물 저장, 셀룰로스=식물 세포벽</b>. 같은 포도당도 결합 방식에 따라 역할이 달라져요!';
+      markDone('role');
+      showStageClear(body);
+    }else{
+      fb.className='feedback incorrect';
+      fb.innerHTML='살짝 어긋났어요. <span class="en">힌트: "간·근육"은 동물, "세포벽·소화 안 됨"은 셀룰로스</span>';
+    }
+  };
+}
+
+/* ---------------- 스테이지 클리어 → 배지 ---------------- */
+function showStageClear(body){
+  const allDone = CARB_GAMES.every(g=>carbProgress[g.id]);
+  const r=document.createElement('div'); r.className='btnRow';
+  if(allDone){
+    save.done['carb']=true; persist();
+    r.innerHTML='<button class="primary" id="toClear">⚡ 배지 받기 →</button>';
+    body.appendChild(r);
+    document.getElementById('toClear').onclick=renderCarbClear;
+  }else{
+    r.innerHTML='<button class="primary" id="back2">스테이지로 →</button>';
+    body.appendChild(r);
+    document.getElementById('back2').onclick=renderCarbStage;
+  }
+}
+
+function renderCarbClear(){
+  app.innerHTML = topbar('탄수화물 월드 🍞') + `
+  <div class="wrap">
+    <div class="clear">
+      <div class="medal">⚡</div>
+      <h2>탄수화물 월드 클리어!</h2>
+      <div class="badgeGet">
+        <div class="bi">⚡ 에너지 배지 획득</div>
+        <p style="margin-top:8px;color:var(--muted);line-height:1.6">
+          탄수화물의 구성 원소(C·H·O 1:2:1), 단당류·이당류·다당류의 종류,
+          녹말·글리코겐·셀룰로스의 역할을 모두 익혔어요.</p>
+      </div>
+      <div class="btnRow">
+        <button class="ghost" id="again">다시 하기</button>
+        <button class="primary" id="toSel">월드맵으로 →</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('back').onclick=renderWorldMap;
+  document.getElementById('again').onclick=()=>{carbProgress={};renderCarbStage();};
+  document.getElementById('toSel').onclick=renderWorldMap;
+}
+
+const CARB_ROUTER = { atom:gameAtom, sort:gameSort, role:gameRole, quiz:()=>renderQuiz('carb') };
+
+/* ==================== 마을 퀴즈 ==================== */
+const VILLAGE_QUIZ = {
+  carb: [
+    {q:'광합성 결과 생성된 포도당이 식물체 내에서 주로 저장되는 형태는 무엇일까요?',
+     choices:['포도당','글리코젠','녹말','설탕','셀룰로스'], answer:'녹말'},
+    {q:'식물 세포벽의 주성분으로 세포의 형태를 유지해 주는 다당류는 무엇일까요?',
+     choices:['녹말','글리코젠','셀룰로스','포도당','과당'], answer:'셀룰로스'},
+    {q:'다음 중 단당류에 해당하지 않는 것은 무엇일까요?',
+     choices:['포도당','과당','갈락토스','녹말','단당류 모두 해당'], answer:'녹말'},
+  ],
+  lipid: [
+    {q:'생체막을 구성하는 주요 성분으로, 친수성 머리와 소수성 꼬리를 가진 물질은 무엇일까요?',
+     choices:['중성지방','스테로이드','인지질','콜레스테롤','포도당'], answer:'인지질'},
+    {q:'다음 중 스테로이드에 해당하지 않는 것은 무엇일까요?',
+     choices:['콜레스테롤','성호르몬','부신겉질호르몬','인지질','모두 스테로이드임'], answer:'인지질'},
+    {q:'중성지방의 구성 성분은 글리세롤과 무엇이 결합한 것일까요?',
+     choices:['포도당','지방산','인산','아미노산','뉴클레오타이드'], answer:'지방산'},
+  ],
+  protein: [
+    {q:'단백질을 구성하는 기본 단위인 아미노산의 종류는 일반적으로 몇 가지일까요?',
+     choices:['5종','10종','15종','20종','25종'], answer:'20종'},
+    {q:'아미노산 사이의 펩타이드 결합을 통해 형성되는 구조는 무엇일까요?',
+     choices:['뉴클레오타이드','폴리펩타이드','이당류','지방산','중성지방'], answer:'폴리펩타이드'},
+    {q:'단백질의 입체 구조가 변하여 제 기능을 하지 못하게 되는 주된 원인이 아닌 것은?',
+     choices:['온도 변화','pH 변화','아미노산 서열','물질 수송','환경 조건의 급격한 변화'], answer:'물질 수송'},
+  ],
+  nucleic: [
+    {q:'핵산의 기본 단위체인 뉴클레오타이드를 구성하는 요소가 아닌 것은 무엇일까요?',
+     choices:['인산','당','염기','지방산','뉴클레오타이드는 위 세 가지로 구성됨'], answer:'지방산'},
+    {q:'DNA를 구성하는 당은 무엇일까요?',
+     choices:['라이보스','디옥시라이보스','포도당','과당','녹말'], answer:'디옥시라이보스'},
+    {q:'RNA에만 존재하고 DNA에는 없는 염기는 무엇일까요?',
+     choices:['아데닌(A)','구아닌(G)','사이토신(C)','타이민(T)','유라실(U)'], answer:'유라실(U)'},
+  ],
+  // 최종 보스: 4대 영양소를 통합적으로 묻는 문항(창작)
+  boss: [
+    {q:'생명체 구성 물질 중 구성 원소로 <b>질소(N)</b>를 반드시 포함하는 것끼리 옳게 짝지은 것은?',
+     choices:['탄수화물, 지질','단백질, 핵산','탄수화물, 핵산','지질, 단백질','탄수화물, 지질, 핵산'], answer:'단백질, 핵산'},
+    {q:'4대 영양소와 그 <b>기본 단위(단위체)</b>를 옳게 연결한 것은?',
+     choices:['탄수화물 – 아미노산','단백질 – 포도당','핵산 – 뉴클레오타이드','지질 – 뉴클레오타이드','단백질 – 단당류'], answer:'핵산 – 뉴클레오타이드'},
+    {q:'생명체 구성 물질에 대한 설명으로 <b>옳은</b> 것은?',
+     choices:[
+       '셀룰로스는 동물의 주된 에너지 저장 물질이다.',
+       '인지질은 세포막의 주요 구성 성분이다.',
+       'DNA의 기본 단위는 아미노산이다.',
+       '포도당이 펩타이드 결합으로 이어져 녹말이 된다.',
+       '단백질은 유전 정보를 저장하는 주된 물질이다.'],
+     answer:'인지질은 세포막의 주요 구성 성분이다.'},
+  ],
+};
+
+function villageMeta(id){
+  if(id==='boss') return {name:'최종 보스', badge:'👑', color:'--protein'};
+  const s = STAGES.find(x=>x.id===id) || {name:id, badge:'⭐', color:'--carb'};
+  return {name:s.name, badge:s.badge, color:s.color};
+}
+
+let quizState = null;
+function renderQuiz(villageId){
+  document.onkeydown = null;
+  const meta = villageMeta(villageId);
+  const items = VILLAGE_QUIZ[villageId] || [];
+  quizState = {villageId, i:0, wrong:0, answered:false};
+  const isBoss = villageId==='boss';
+  app.innerHTML = topbar(`${meta.name}${isBoss?' 👑 · 4대 영양소 통합 시험':' · 마을 퀴즈'}`) + `
+  <div class="wrap">
+    <div class="panel">
+      ${isBoss?'<div class="goal">🏆 <b>최종 보스전!</b> 탄수화물·단백질·지질·핵산을 통합적으로 묻습니다. 3문제를 모두 맞히면 <b>세포 마스터</b> 인증서를 얻어요.</div>':''}
+      <div class="qnum" id="qProgress"></div>
+      <h2 class="gh" id="qText" style="line-height:1.5"></h2>
+      <div class="quizChoices" id="qChoices"></div>
+      <div class="feedback" id="qFb"></div>
+      <div class="btnRow" id="qBtnRow"></div>
+    </div>
+  </div>`;
+  const back = villageId==='carb' ? renderCarbStage : isBoss ? renderWorldMap : ()=>renderVillageStage(villageId);
+  document.getElementById('back').onclick = back;
+  quizState.back = back;
+  drawQuizQuestion();
+}
+
+function drawQuizQuestion(){
+  const {villageId, i} = quizState;
+  const items = VILLAGE_QUIZ[villageId];
+  const item = items[i];
+  quizState.answered = false;
+  document.getElementById('qProgress').textContent = `문제 ${i+1} / ${items.length}`;
+  document.getElementById('qText').textContent = item.q;
+  const fb = document.getElementById('qFb'); fb.className='feedback'; fb.innerHTML='';
+  document.getElementById('qBtnRow').innerHTML='';
+  const box = document.getElementById('qChoices');
+  box.innerHTML='';
+  item.choices.forEach(ch=>{
+    const b=document.createElement('button');
+    b.className='choiceBtn'; b.textContent=ch;
+    b.onclick=()=>pickChoice(b, ch, item);
+    box.appendChild(b);
+  });
+}
+
+function pickChoice(btn, choice, item){
+  if(quizState.answered) return;
+  quizState.answered = true;
+  const correct = choice===item.answer;
+  const buttons = [...document.querySelectorAll('.choiceBtn')];
+  buttons.forEach(b=>{
+    b.classList.add('locked');
+    if(b.textContent===item.answer) b.classList.add('right');   // 정답 강조(학습)
+  });
+  if(!correct){ btn.classList.add('wrong'); quizState.wrong++; }
+  const fb=document.getElementById('qFb');
+  fb.className='feedback '+(correct?'correct':'incorrect');
+  fb.innerHTML = correct ? '정답이에요! 🎉' : `아쉬워요. 정답은 <b>${item.answer}</b> 입니다.`;
+  const items = VILLAGE_QUIZ[quizState.villageId];
+  const last = quizState.i >= items.length-1;
+  const row=document.getElementById('qBtnRow');
+  row.innerHTML = `<button class="primary" id="qNext">${last?'결과 보기 →':'다음 문제 →'}</button>`;
+  document.getElementById('qNext').onclick = ()=>{
+    if(last){ renderQuizResult(); }
+    else { quizState.i++; drawQuizQuestion(); }
+  };
+}
+
+function renderQuizResult(){
+  const {villageId, wrong, back} = quizState;
+  const items = VILLAGE_QUIZ[villageId];
+  const total = items.length, score = total - wrong;
+  const meta = villageMeta(villageId);
+  const passed = wrong===0;
+  const isBoss = villageId==='boss';
+  if(passed){
+    if(villageId==='carb'){ carbProgress.quiz = true; }
+    else if(isBoss){ save.done.boss = true; persist(); }
+    else { vgProgress[villageId].quiz = true; }
+  }
+  if(isBoss && passed){ renderBossClear(); return; }
+  app.innerHTML = topbar(`${meta.name}${isBoss?' 👑':' · 마을 퀴즈'}`) + `
+  <div class="wrap">
+    <div class="clear">
+      <div class="medal">${isBoss?'💥':'📚'}</div>
+      <h2>${isBoss?'앗, 아직이에요!':'다시 도전해요!'}</h2>
+      <div class="badgeGet">
+        <div class="bi" style="color:var(--bad)">${score} / ${total} 정답</div>
+        <p style="margin-top:8px;color:var(--muted);line-height:1.6">
+          ${isBoss
+            ? '보스전은 3문제를 <b>모두</b> 맞혀야 통과예요. 각 마을을 복습하고 다시 도전해 보세요!'
+            : '틀린 문제가 있어요. 개념을 다시 확인하고 재도전하면 미션을 완료할 수 있어요.'}</p>
+      </div>
+      <div class="btnRow">
+        <button class="ghost" id="qRetry">다시 도전</button>
+        <button class="primary" id="qDone">${isBoss?'월드맵으로 →':'미션으로 →'}</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('back').onclick = back;
+  document.getElementById('qRetry').onclick = ()=>renderQuiz(villageId);
+  document.getElementById('qDone').onclick = back;
+}
+
+// 최종 보스 클리어 → 세포 마스터 인증서
+function renderBossClear(){
+  app.innerHTML = topbar('최종 보스 👑') + `
+  <div class="wrap">
+    <div class="clear">
+      <div class="medal">👑</div>
+      <h2>세포 마스터 탄생!</h2>
+      <div class="badgeGet" style="border:3px solid var(--carb);">
+        <div class="bi">🏆 세포 마스터 인증서</div>
+        <p style="margin-top:10px;color:var(--muted);line-height:1.7">
+          탄수화물·단백질·지질·핵산 <b>4대 영양소</b>의 구성 원소, 기본 단위,
+          세포 속 역할까지 통합적으로 이해했습니다.<br>
+          <b>원소 탐험대</b>의 모든 여정을 완료했어요! 🎉</p>
+        <div class="badges" style="justify-content:center;margin-top:12px;gap:12px">
+          <span style="font-size:1.8rem">⚡</span><span style="font-size:1.8rem">🔮</span>
+          <span style="font-size:1.8rem">🔥</span><span style="font-size:1.8rem">🧭</span>
+          <span style="font-size:1.8rem">👑</span>
+        </div>
+      </div>
+      <div class="btnRow"><button class="primary" id="toMap">월드맵으로 →</button></div>
+    </div>
+  </div>`;
+  document.getElementById('back').onclick = renderWorldMap;
+  document.getElementById('toMap').onclick = renderWorldMap;
+}
+
+/* ==================== 마을 스테이지 엔진 (단백질/지질/핵산) ==================== */
+const VG = {
+  protein: {name:'단백질 성', en:'Protein Castle', ic:'🧬', badge:'🔮', color:'--protein',
+    intro:'단백질은 <b>아미노산</b>이 <b>펩타이드 결합</b>으로 이어진 사슬이에요. 곁사슬(R기)의 성질이 구조와 기능을 결정하죠.',
+    clearMsg:'아미노산의 극성/무극성 분류, 펩타이드 결합(탈수 축합), 그리고 개념 퀴즈까지 완료했어요.',
+    missions:[
+      {id:'aminosort', ic:'🧴', name:'아미노산 분류소', en:'Amino Acid Sorting', sub:'곁사슬 성질로 극성/무극성 분류', run:gameAminoSort},
+      {id:'peptide',   ic:'🔗', name:'펩타이드 결합',   en:'Peptide Bond',        sub:'아미노산 연결·물 방출', run:gamePeptide},
+      {id:'quiz',      ic:'🧠', name:'마을 퀴즈',        en:'Village Quiz',        sub:'단백질 개념 3문제', run:()=>renderQuiz('protein')},
+    ]},
+  lipid: {name:'지방 저장소', en:'Lipid Storage', ic:'💧', badge:'🔥', color:'--lipid',
+    intro:'지질은 물에 잘 녹지 않아요. <b>중성지방</b>은 글리세롤 1개 + 지방산 3개로, 지방산의 결합 방식에 따라 포화·불포화로 나뉘죠.',
+    clearMsg:'중성지방 조립(에스터 결합), 포화/불포화 구분, 개념 퀴즈까지 완료했어요.',
+    missions:[
+      {id:'triglyceride', ic:'🧩', name:'중성지방 조립소', en:'Build Triglyceride', sub:'글리세롤 + 지방산 3개 결합', run:gameTriglyceride},
+      {id:'satunsat',     ic:'📐', name:'포화 vs 불포화',  en:'Saturated or Not',   sub:'지방산 구조로 분류', run:gameSatUnsat},
+      {id:'quiz',         ic:'🧠', name:'마을 퀴즈',        en:'Village Quiz',       sub:'지질 개념 3문제', run:()=>renderQuiz('lipid')},
+    ]},
+  nucleic: {name:'정보 도서관', en:'Nucleic Acid Library', ic:'📚', badge:'🧭', color:'--nucleic',
+    intro:'핵산은 <b>뉴클레오타이드</b>(인산+당+염기)가 이어진 물질로 유전 정보를 담아요. 두 가닥은 염기쌍으로 결합하죠.',
+    clearMsg:'염기쌍(A-T, G-C) 규칙, 뉴클레오타이드 구성, 개념 퀴즈까지 완료했어요.',
+    missions:[
+      {id:'basepair',   ic:'🧲', name:'염기쌍 맞추기',    en:'Base Pairing',       sub:'A-T, G-C 상보 결합', run:gameBasePair},
+      {id:'nucleotide', ic:'🧱', name:'뉴클레오타이드 조립', en:'Build Nucleotide', sub:'인산·당·염기 결합', run:gameNucleotide},
+      {id:'quiz',       ic:'🧠', name:'마을 퀴즈',        en:'Village Quiz',       sub:'핵산 개념 3문제', run:()=>renderQuiz('nucleic')},
+    ]},
+};
+let vgProgress = {protein:{}, lipid:{}, nucleic:{}};
+function markDoneVG(vid, mid){ vgProgress[vid][mid] = true; }
+
+function renderVillageStage(vid){
+  document.onkeydown = null;
+  const v = VG[vid];
+  app.innerHTML = topbar(`${v.name} ${v.ic}`) + `
+  <div class="wrap">
+    <div class="intro">
+      <h2 style="color:${css(v.color)}">${v.name} <span class="en">${v.en}</span></h2>
+      <p class="lead">${v.intro} 세 미션을 모두 완료하면 <b>${v.badge} 배지</b>를 얻어요!</p>
+    </div>
+    <div class="grid" id="games"></div>
+  </div>`;
+  document.getElementById('back').onclick = renderWorldMap;
+  const g = document.getElementById('games');
+  v.missions.forEach((m,i)=>{
+    const done = !!vgProgress[vid][m.id];
+    const el = document.createElement('div');
+    el.className = `card ${done?'done':'play'}`;
+    el.style.borderColor = done?css('--ok'):css(v.color);
+    el.innerHTML = `<div class="chip">${done?'완료 ✓':'미션 '+(i+1)}</div>
+      <div class="ic">${m.ic}</div><h3>${m.name}<div class="en">${m.en}</div></h3>
+      <div class="sub">${m.sub}</div><span class="go">${done?'다시 하기':'도전 →'}</span>`;
+    el.onclick = ()=>m.run();
+    g.appendChild(el);
+  });
+  if(v.missions.every(m=>vgProgress[vid][m.id]) && !stageDone(vid)){ save.done[vid]=true; persist(); }
+  if(stageDone(vid)){
+    const note=document.createElement('div'); note.className='goal'; note.style.marginTop='18px';
+    note.innerHTML=`🎉 <b>${v.badge} 배지 획득!</b> ${v.name}의 모든 미션을 완료했어요.
+      <div class="btnRow" style="margin-top:12px"><button class="primary" id="toClearBtn">${v.badge} 배지 받고 월드맵으로 →</button></div>`;
+    document.querySelector('.wrap').appendChild(note);
+    document.getElementById('toClearBtn').onclick=()=>renderVillageClear(vid);
+  }
+}
+
+function gameShellV(vid, title, en, num, goalHtml, bodyId){
+  const v = VG[vid];
+  app.innerHTML = topbar(`${v.name} ${v.ic}`) + `
+  <div class="wrap"><div class="panel">
+    <div class="qnum">${num}</div>
+    <h2 class="gh">${title} <span class="en">${en}</span></h2>
+    <div class="goal">${goalHtml}</div>
+    <div id="${bodyId}"></div>
+  </div></div>`;
+  document.getElementById('back').onclick = ()=>renderVillageStage(vid);
+}
+
+function winMission(vid, mid){
+  markDoneVG(vid, mid);
+  const body = document.getElementById('gb');
+  if(body && !document.getElementById('nextm')){
+    const r=document.createElement('div'); r.className='btnRow';
+    r.innerHTML=`<button class="primary" id="nextm">미션 목록으로 →</button>`;
+    body.appendChild(r);
+    document.getElementById('nextm').onclick=()=>renderVillageStage(vid);
+  }
+}
+
+function renderVillageClear(vid){
+  const v = VG[vid];
+  app.innerHTML = topbar(`${v.name} ${v.ic}`) + `
+  <div class="wrap"><div class="clear">
+    <div class="medal">${v.badge}</div>
+    <h2>${v.name} 클리어!</h2>
+    <div class="badgeGet"><div class="bi">${v.badge} 배지 획득</div>
+      <p style="margin-top:8px;color:var(--muted);line-height:1.6">${v.clearMsg}</p></div>
+    <div class="btnRow">
+      <button class="ghost" id="again">다시 하기</button>
+      <button class="primary" id="toMap">월드맵으로 →</button></div>
+  </div></div>`;
+  document.getElementById('back').onclick = renderWorldMap;
+  document.getElementById('again').onclick = ()=>{ vgProgress[vid]={}; renderVillageStage(vid); };
+  document.getElementById('toMap').onclick = renderWorldMap;
+}
+
+/* ---- 공용 분류 미니게임 ---- */
+function binGame(cfg){
+  const {vid, mid, title, en, num, goal, hint, items, bins, successMsg, rerun} = cfg;
+  gameShellV(vid, title, en, num, goal, 'gb');
+  const body = document.getElementById('gb');
+  const shuffled = [...items].sort(()=>Math.random()-.5);
+  body.innerHTML = `
+    <div class="pool" id="pool"></div>
+    <div class="bins" style="grid-template-columns:repeat(${bins.length},minmax(0,1fr))">
+      ${bins.map(b=>`<div class="bin dz" data-drop data-key="${b.key}"><h4>${b.ko}<div class="en">${b.en||''}</div></h4><div class="desc">${b.desc||''}</div><div class="drop"></div></div>`).join('')}
+    </div>
+    ${hint?`<div class="hint">${hint}</div>`:''}
+    <div class="feedback" id="fb"></div>
+    <div class="btnRow"><button class="ghost" id="reset">다시</button><button class="primary" id="submit">채점하기</button></div>`;
+  const pool = document.getElementById('pool'); pool.setAttribute('data-drop','');
+  shuffled.forEach(s=>{
+    const t=document.createElement('div'); t.className='token'; t.dataset.key=s.key; t.innerHTML=s.label;
+    makeDraggable(t,{dropSelector:'[data-drop]', onDropTo:(el,zone)=>{
+      (zone.classList.contains('bin')?zone.querySelector('.drop'):zone).appendChild(el);
+      el.classList.remove('placed'); document.getElementById('fb').className='feedback';
+    }});
+    pool.appendChild(t);
+  });
+  document.getElementById('reset').onclick = rerun;
+  document.getElementById('submit').onclick = ()=>{
+    const fb=document.getElementById('fb'); let placed=0, correct=0;
+    document.querySelectorAll('.bin').forEach(bin=>{
+      bin.querySelectorAll('.token').forEach(t=>{ placed++;
+        if(t.dataset.key===bin.dataset.key){correct++;t.classList.add('placed');} else t.classList.remove('placed'); });
+    });
+    if(placed<items.length){ fb.className='feedback incorrect'; fb.innerHTML=`아직 <b>${items.length-placed}개</b>가 통에 담기지 않았어요.`; return; }
+    if(correct===items.length){ fb.className='feedback correct'; fb.innerHTML=successMsg||'완벽해요! 🎉'; winMission(vid, mid); }
+    else { fb.className='feedback incorrect'; fb.innerHTML=`${correct}/${items.length} 정답. 초록 테두리가 아닌 카드를 다시 옮겨 보세요.`; }
+  };
+}
+
+/* ---- 단백질 미션 1: 아미노산 분류 ---- */
+function gameAminoSort(){
+  const aa=(ko,en)=>`${ko}<span class="en">${en}</span>`;
+  binGame({
+    vid:'protein', mid:'aminosort', title:'아미노산 분류소', en:'Amino Acid Sorting', num:'미션 1 · 드래그 분류',
+    goal:'아미노산을 <b>곁사슬(R기)</b>의 성질에 따라 <b>무극성(소수성)</b>과 <b>극성(친수성)</b>으로 분류하세요.',
+    hint:'💡 탄화수소(-CH₃ 등)로만 된 곁사슬은 <b>무극성</b>, 산소·질소를 포함하거나 전하를 띠면 <b>극성</b>이에요.',
+    items:[
+      {key:'nonpolar', label:aa('알라닌','Ala')},{key:'nonpolar', label:aa('발린','Val')},
+      {key:'nonpolar', label:aa('류신','Leu')},{key:'nonpolar', label:aa('페닐알라닌','Phe')},
+      {key:'polar', label:aa('세린','Ser')},{key:'polar', label:aa('트레오닌','Thr')},
+      {key:'polar', label:aa('라이신','Lys')},{key:'polar', label:aa('아스파트산','Asp')},
+    ],
+    bins:[{key:'nonpolar',ko:'무극성',en:'Nonpolar',desc:'소수성 곁사슬'},{key:'polar',ko:'극성',en:'Polar',desc:'친수성 곁사슬'}],
+    successMsg:'정확해요! 🎉 무극성(알라닌·발린·류신·페닐알라닌) / 극성(세린·트레오닌·라이신·아스파트산) 분류 완료!',
+    rerun:gameAminoSort
+  });
+}
+
+/* ---- 단백질 미션 2: 펩타이드 결합 ---- */
+function gamePeptide(){
+  const vid='protein';
+  gameShellV(vid,'펩타이드 결합','Peptide Bond','미션 2 · 조립',
+    '아미노산 3개를 <b>빈자리</b>로 끌어다 순서대로 연결하세요. 결합이 생길 때마다 <b>물(H₂O)</b>이 빠져나가요(탈수 축합).','gb');
+  const body=document.getElementById('gb');
+  body.innerHTML=`
+    <div id="chain" style="display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;margin-bottom:16px"></div>
+    <div style="text-align:center;margin-bottom:14px">형성된 펩타이드 결합: <b id="bondN">0</b>개 · 방출된 물: <b id="waterN">0</b>분자 💧</div>
+    <div class="pool" id="pool"></div>
+    <div class="feedback" id="fb"></div>
+    <div class="btnRow"><button class="ghost" id="reset">다시</button></div>`;
+  const slots=[null,null,null];
+  const aminos=[{n:'Gly',ko:'글리신'},{n:'Ala',ko:'알라닌'},{n:'Ser',ko:'세린'}];
+  const chain=document.getElementById('chain'), pool=document.getElementById('pool');
+  aminos.forEach(a=>{
+    const t=document.createElement('div'); t.className='token'; t.dataset.n=a.n; t.dataset.ko=a.ko;
+    t.innerHTML=`${a.ko}<span class="en">${a.n}</span>`;
+    makeDraggable(t,{dropSelector:'[data-drop]', onDropTo:(el,zone)=>{
+      const slot=zone.closest('.pslot');
+      if(!slot){ pool.appendChild(el); return; }
+      const idx=+slot.dataset.slot;
+      if(slots[idx]) return;
+      slots[idx]={n:el.dataset.n, ko:el.dataset.ko}; el.remove(); render();
+    }});
+    pool.appendChild(t);
+  });
+  function render(){
+    chain.innerHTML='';
+    for(let i=0;i<3;i++){
+      if(i>0){
+        const both=slots[i-1]&&slots[i];
+        const c=document.createElement('span');
+        c.style.cssText='min-width:24px;text-align:center;font-size:1.2rem';
+        c.textContent=both?'🔗':'·'; c.style.opacity=both?'1':'.4';
+        chain.appendChild(c);
+      }
+      const box=document.createElement('div'); box.className='pslot dz'; box.dataset.slot=i; box.setAttribute('data-drop','');
+      box.style.cssText='width:76px;height:60px;border:2px dashed #cfcfe0;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fafaff;font-size:.85rem';
+      const a=slots[i];
+      if(a){ box.style.border='2px solid #ff8787'; box.style.background='#fff0f0'; box.innerHTML=`<b>${a.ko}</b><small style="color:#999">${a.n}</small>`; }
+      else box.innerHTML='<span style="color:#bbb">빈자리</span>';
+      chain.appendChild(box);
+    }
+    const bonds=(slots[0]&&slots[1]?1:0)+(slots[1]&&slots[2]?1:0);
+    document.getElementById('bondN').textContent=bonds;
+    document.getElementById('waterN').textContent=bonds;
+    if(slots[0]&&slots[1]&&slots[2]){
+      const fb=document.getElementById('fb'); fb.className='feedback correct';
+      fb.innerHTML='폴리펩타이드 완성! 🎉 아미노산 3개가 <b>펩타이드 결합 2개</b>로 이어지고 <b>물 2분자</b>가 빠졌어요.';
+      winMission(vid,'peptide');
+    }
+  }
+  document.getElementById('reset').onclick=gamePeptide;
+  render();
+}
+
+/* ---- 지질 미션 1: 중성지방 조립 ---- */
+function gameTriglyceride(){
+  const vid='lipid';
+  gameShellV(vid,'중성지방 조립소','Build Triglyceride','미션 1 · 조립',
+    '<b>글리세롤</b>의 세 -OH 자리에 <b>지방산</b>을 끌어다 결합하세요. 결합마다 <b>에스터 결합</b>이 생기고 <b>물</b>이 빠져요. (포도당·아미노산은 결합하지 않아요)','gb');
+  const body=document.getElementById('gb');
+  body.innerHTML=`
+    <div style="display:flex;gap:18px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:14px">
+      <div style="background:#eef6ff;border:2px solid #b9d3f0;border-radius:12px;padding:14px 16px;text-align:center;font-weight:700;color:#2b5a8c">글리세롤<br><span class="en">Glycerol</span></div>
+      <div id="slots" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+    <div style="text-align:center;margin-bottom:12px">에스터 결합: <b id="esterN">0</b>/3 · 방출된 물: <b id="waterN">0</b>분자 💧</div>
+    <div class="pool" id="pool"></div>
+    <div class="feedback" id="fb"></div>
+    <div class="btnRow"><button class="ghost" id="reset">다시</button></div>`;
+  const filled=[null,null,null];
+  const slotsBox=document.getElementById('slots'), pool=document.getElementById('pool');
+  const pieces=[{k:'fa',ko:'지방산',en:'Fatty acid'},{k:'fa',ko:'지방산',en:'Fatty acid'},{k:'fa',ko:'지방산',en:'Fatty acid'},
+                {k:'x',ko:'포도당',en:'Glucose'},{k:'x',ko:'아미노산',en:'Amino acid'}];
+  pieces.sort(()=>Math.random()-.5).forEach(p=>{
+    const t=document.createElement('div'); t.className='token'; t.dataset.k=p.k;
+    t.innerHTML=`${p.ko}<span class="en">${p.en}</span>`;
+    makeDraggable(t,{dropSelector:'[data-drop]', onDropTo:(el,zone)=>{
+      const slot=zone.closest('.ohSlot');
+      if(!slot){ pool.appendChild(el); return; }
+      const idx=+slot.dataset.slot;
+      if(filled[idx]) return;
+      if(el.dataset.k!=='fa'){ const fb=document.getElementById('fb'); fb.className='feedback incorrect'; fb.innerHTML='그 자리엔 <b>지방산</b>이 에스터 결합해요. (포도당·아미노산 ✕)'; pool.appendChild(el); return; }
+      filled[idx]=true; el.remove(); render();
+    }});
+    pool.appendChild(t);
+  });
+  function render(){
+    slotsBox.innerHTML='';
+    for(let i=0;i<3;i++){
+      const row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;gap:6px';
+      const oh=document.createElement('div'); oh.className='ohSlot dz'; oh.dataset.slot=i; oh.setAttribute('data-drop','');
+      oh.style.cssText='min-width:150px;height:44px;border:2px dashed #cfcfe0;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#fafaff;font-size:.85rem;font-weight:700';
+      if(filled[i]){ oh.style.border='2px solid #ff9933'; oh.style.background='#fff6e9'; oh.innerHTML='지방산 <span style="color:#ff9933">— 에스터결합 —</span>'; }
+      else oh.innerHTML='<span style="color:#bbb">–OH (여기에 지방산)</span>';
+      row.appendChild(oh); slotsBox.appendChild(row);
+    }
+    const n=filled.filter(Boolean).length;
+    document.getElementById('esterN').textContent=n;
+    document.getElementById('waterN').textContent=n;
+    if(n===3){
+      const fb=document.getElementById('fb'); fb.className='feedback correct';
+      fb.innerHTML='중성지방(트라이글리세라이드) 완성! 🎉 <b>에스터 결합 3개</b>가 생기고 <b>물 3분자</b>가 빠졌어요.';
+      winMission(vid,'triglyceride');
+    }
+  }
+  document.getElementById('reset').onclick=gameTriglyceride;
+  render();
+}
+
+/* ---- 지질 미션 2: 포화 vs 불포화 ---- */
+function gameSatUnsat(){
+  const sat=`<svg width="58" height="16" viewBox="0 0 58 16" style="vertical-align:middle"><polyline points="2,13 10,3 18,13 26,3 34,13 42,3 50,13 56,6" fill="none" stroke="#e08f2e" stroke-width="2"/></svg>`;
+  const unsat=`<svg width="58" height="22" viewBox="0 0 58 22" style="vertical-align:middle"><polyline points="2,5 10,13 18,7 26,15" fill="none" stroke="#e08f2e" stroke-width="2"/><polyline points="26,15 34,7 44,17 52,9" fill="none" stroke="#c0392b" stroke-width="2"/><text x="30" y="6" font-size="7" fill="#c0392b">=</text></svg>`;
+  const fa=(ko,en,svg)=>`${ko}<span class="en">${en}</span><div style="margin-top:4px">${svg}</div>`;
+  binGame({
+    vid:'lipid', mid:'satunsat', title:'포화 vs 불포화', en:'Saturated or Not', num:'미션 2 · 드래그 분류',
+    goal:'지방산의 <b>구조</b>를 보고 분류하세요. 곧게 뻗은 사슬(단일결합만)과, 이중결합으로 <b>꺾인</b> 사슬이 있어요.',
+    hint:'💡 이중결합(=)이 없으면 <b>포화</b>(곧은 사슬, 예: 버터), 이중결합이 있어 꺾이면 <b>불포화</b>(예: 올리브유)예요.',
+    items:[
+      {key:'sat', label:fa('팔미트산','Palmitic',sat)},{key:'sat', label:fa('스테아르산','Stearic',sat)},
+      {key:'sat', label:fa('뷰티르산','Butyric',sat)},
+      {key:'unsat', label:fa('올레산','Oleic',unsat)},{key:'unsat', label:fa('리놀레산','Linoleic',unsat)},
+      {key:'unsat', label:fa('아라키돈산','Arachidonic',unsat)},
+    ],
+    bins:[{key:'sat',ko:'포화지방산',en:'Saturated',desc:'곧은 사슬 · 단일결합만'},{key:'unsat',ko:'불포화지방산',en:'Unsaturated',desc:'이중결합으로 꺾임'}],
+    successMsg:'정확해요! 🎉 이중결합 유무로 포화·불포화가 갈려요. 포화는 상온 고체(버터), 불포화는 액체(기름)인 경향!',
+    rerun:gameSatUnsat
+  });
+}
+
+/* ---- 핵산 미션 1: 염기쌍 맞추기 ---- */
+function gameBasePair(){
+  const vid='nucleic';
+  gameShellV(vid,'염기쌍 맞추기','Base Pairing','미션 1 · 상보결합',
+    '왼쪽 가닥의 각 염기에 <b>상보적인 염기</b>를 끌어다 짝지으세요. <b>A-T, G-C</b> 규칙이에요.','gb');
+  const body=document.getElementById('gb');
+  const strand=['A','T','G','C'];
+  const comp={A:'T',T:'A',G:'C',C:'G'};
+  const colors={A:'#e5484d',T:'#f5b400',G:'#4a6cf7',C:'#2fb56b'};
+  body.innerHTML=`
+    <div id="rows" style="display:flex;flex-direction:column;gap:10px;max-width:420px;margin:0 auto 14px"></div>
+    <div style="text-align:center;margin-bottom:8px;color:var(--muted);font-size:.9rem">아래 염기를 끌어 올리세요</div>
+    <div class="pool" id="pool"></div>
+    <div class="feedback" id="fb"></div>
+    <div class="btnRow"><button class="ghost" id="reset">다시</button></div>`;
+  const rows=document.getElementById('rows'), pool=document.getElementById('pool');
+  const baseTag=(b,big)=>`<div style="width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;background:${colors[b]};font-size:${big?'1.1rem':'1rem'}">${b}</div>`;
+  strand.forEach((b,i)=>{
+    const row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;gap:8px;justify-content:center';
+    row.innerHTML=`${baseTag(b,true)}<span class="bondMark" data-i="${i}" style="min-width:30px;text-align:center;color:#bbb;font-weight:800">···</span>`;
+    const slot=document.createElement('div'); slot.className='baseSlot dz'; slot.dataset.need=comp[b]; slot.setAttribute('data-drop','');
+    slot.style.cssText='width:46px;height:46px;border:2px dashed #cfcfe0;border-radius:10px;background:#fafaff';
+    row.appendChild(slot); rows.appendChild(row);
+  });
+  ['A','T','G','C'].forEach(b=>{
+    const t=document.createElement('div'); t.className='token'; t.dataset.base=b;
+    t.style.cssText='padding:0;border:none;background:none;box-shadow:none';
+    t.innerHTML=baseTag(b,false);
+    makeDraggable(t,{dropSelector:'[data-drop]', onDropTo:(el,zone)=>{
+      const slot=zone.closest('.baseSlot');
+      if(!slot){ pool.appendChild(el); return; }
+      const prev=slot.querySelector('.token'); if(prev) pool.appendChild(prev);
+      slot.appendChild(el); check();
+    }});
+    pool.appendChild(t);
+  });
+  function check(){
+    const slots=[...document.querySelectorAll('.baseSlot')];
+    if(slots.some(s=>!s.querySelector('.token'))) return;
+    let ok=true;
+    slots.forEach((s,i)=>{
+      const b=s.querySelector('.token').dataset.base;
+      const correct=b===s.dataset.need;
+      if(!correct) ok=false;
+      const mark=document.querySelector(`.bondMark[data-i="${i}"]`);
+      if(correct){ const pair=s.dataset.need, top=strand[i];
+        const three=(top==='G'||top==='C'); mark.textContent=three?'≡':'⟌⟌'; mark.style.color=three?'#4a6cf7':'#e5484d'; }
+    });
+    const fb=document.getElementById('fb');
+    if(ok){ fb.className='feedback correct';
+      fb.innerHTML='정답! 🎉 <b>A-T는 수소결합 2개, G-C는 3개</b>로 결합해요. (샤가프 규칙)'; winMission(vid,'basepair'); }
+    else { fb.className='feedback incorrect'; fb.innerHTML='상보 결합이 맞지 않아요. <b>A-T, G-C</b>를 떠올려 보세요.'; }
+  }
+  document.getElementById('reset').onclick=gameBasePair;
+}
+
+/* ---- 핵산 미션 2: 뉴클레오타이드 조립 ---- */
+function gameNucleotide(){
+  const vid='nucleic';
+  gameShellV(vid,'뉴클레오타이드 조립','Build Nucleotide','미션 2 · 조립',
+    '뉴클레오타이드의 세 요소 <b>인산·당·염기</b> 자리에 알맞은 조각을 끌어다 놓으세요. (지방산·아미노산은 핵산의 구성 요소가 아니에요)','gb');
+  const body=document.getElementById('gb');
+  body.innerHTML=`
+    <div id="slots" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:16px"></div>
+    <div class="pool" id="pool"></div>
+    <div class="feedback" id="fb"></div>
+    <div class="btnRow"><button class="ghost" id="reset">다시</button><button class="primary" id="submit">확인</button></div>`;
+  const need=[{need:'p',ko:'인산',en:'Phosphate'},{need:'sugar',ko:'당',en:'Sugar'},{need:'base',ko:'염기',en:'Base'}];
+  const slotsBox=document.getElementById('slots'), pool=document.getElementById('pool');
+  need.forEach((s,i)=>{
+    const slot=document.createElement('div'); slot.className='nSlot dz'; slot.dataset.need=s.need; slot.dataset.slot=i; slot.setAttribute('data-drop','');
+    slot.style.cssText='width:110px;min-height:88px;border:2px dashed #cfcfe0;border-radius:12px;background:#fafaff;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:8px';
+    slot.innerHTML=`<div style="font-weight:800;color:#666">${s.ko}<div class="en">${s.en}</div></div><div class="hold" style="margin-top:6px"></div>`;
+    slotsBox.appendChild(slot);
+  });
+  const pieces=[{k:'p',ko:'인산',en:'Phosphate'},{k:'sugar',ko:'디옥시라이보스',en:'Deoxyribose'},{k:'base',ko:'염기 A',en:'Adenine'},
+                {k:'x',ko:'지방산',en:'Fatty acid'},{k:'x',ko:'아미노산',en:'Amino acid'}];
+  pieces.sort(()=>Math.random()-.5).forEach(p=>{
+    const t=document.createElement('div'); t.className='token'; t.dataset.k=p.k;
+    t.innerHTML=`${p.ko}<span class="en">${p.en}</span>`;
+    makeDraggable(t,{dropSelector:'[data-drop]', onDropTo:(el,zone)=>{
+      const slot=zone.closest('.nSlot');
+      if(!slot){ pool.appendChild(el); return; }
+      const hold=slot.querySelector('.hold'); const prev=hold.querySelector('.token'); if(prev) pool.appendChild(prev);
+      hold.appendChild(el); document.getElementById('fb').className='feedback';
+    }});
+    pool.appendChild(t);
+  });
+  document.getElementById('reset').onclick=gameNucleotide;
+  document.getElementById('submit').onclick=()=>{
+    const slots=[...document.querySelectorAll('.nSlot')];
+    const fb=document.getElementById('fb');
+    if(slots.some(s=>!s.querySelector('.token'))){ fb.className='feedback incorrect'; fb.innerHTML='세 자리를 모두 채워 주세요.'; return; }
+    const allOk=slots.every(s=>s.querySelector('.token').dataset.k===s.dataset.need);
+    if(allOk){ fb.className='feedback correct'; fb.innerHTML='뉴클레오타이드 완성! 🎉 <b>인산 + 당(디옥시라이보스) + 염기</b>가 핵산의 기본 단위예요.'; winMission(vid,'nucleotide'); }
+    else { fb.className='feedback incorrect'; fb.innerHTML='조각이 맞지 않아요. 핵산의 단위는 <b>인산·당·염기</b>예요. (지방산·아미노산 ✕)'; }
+  };
+}
+
+/* ============================ 시작 ============================ */
+renderHome();
+</script>
+</body>
+</html>
