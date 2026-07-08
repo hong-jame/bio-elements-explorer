@@ -188,6 +188,16 @@
   @keyframes rise{to{transform:translateY(-170px);opacity:0}}
   .productPop{animation:pop .5s}
 
+  /* ---------- 아미노산 조립 ---------- */
+  .aaWrap{display:flex;justify-content:center;margin-bottom:18px}
+  .aaGrid{display:grid;grid-template-columns:repeat(3,auto);gap:10px;align-items:center;justify-items:center}
+  .aaCore{width:78px;height:78px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#ff8787);
+    color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-weight:800;font-size:1.3rem;box-shadow:0 4px 12px rgba(0,0,0,.28)}
+  .aaCore small{font-size:.55rem;font-weight:600;opacity:.9}
+  .aaSlot{width:96px;min-height:50px;border:2px dashed #cfcfe0;border-radius:12px;background:#fafaff;
+    display:flex;align-items:center;justify-content:center;padding:4px}
+
   /* ---------- 마을 퀴즈 ---------- */
   .quizChoices{display:flex;flex-direction:column;gap:10px;margin-top:6px}
   .choiceBtn{width:100%;text-align:left;background:#f6f6fc;border:2px solid #e2e2ee;border-radius:14px;
@@ -1275,7 +1285,7 @@ const VG = {
     intro:'단백질은 <b>아미노산</b>이 <b>펩타이드 결합</b>으로 이어진 사슬이에요. 곁사슬(R기)의 성질이 구조와 기능을 결정하죠.',
     clearMsg:'아미노산의 극성/무극성 분류, 펩타이드 결합(탈수 축합), 그리고 개념 퀴즈까지 완료했어요.',
     missions:[
-      {id:'aminosort', ic:'🧴', name:'아미노산 분류소', en:'Amino Acid Sorting', sub:'곁사슬 성질로 극성/무극성 분류', run:gameAminoSort},
+      {id:'aminobuild', ic:'🧪', name:'아미노산 조립소', en:'Build an Amino Acid', sub:'중심 탄소에 4가지 기 결합', run:gameAminoBuild},
       {id:'peptide',   ic:'🔗', name:'펩타이드 결합',   en:'Peptide Bond',        sub:'아미노산 연결·물 방출', run:gamePeptide},
       {id:'quiz',      ic:'🧠', name:'마을 퀴즈',        en:'Village Quiz',        sub:'단백질 개념 3문제', run:()=>renderQuiz('protein')},
     ]},
@@ -1409,23 +1419,57 @@ function binGame(cfg){
   };
 }
 
-/* ---- 단백질 미션 1: 아미노산 분류 ---- */
-function gameAminoSort(){
-  const aa=(ko,en)=>`${ko}<span class="en">${en}</span>`;
-  binGame({
-    vid:'protein', mid:'aminosort', title:'아미노산 분류소', en:'Amino Acid Sorting', num:'미션 1 · 드래그 분류',
-    goal:'아미노산을 <b>곁사슬(R기)</b>의 성질에 따라 <b>무극성(소수성)</b>과 <b>극성(친수성)</b>으로 분류하세요.',
-    hint:'💡 탄화수소(-CH₃ 등)로만 된 곁사슬은 <b>무극성</b>, 산소·질소를 포함하거나 전하를 띠면 <b>극성</b>이에요.',
-    items:[
-      {key:'nonpolar', label:aa('알라닌','Ala')},{key:'nonpolar', label:aa('발린','Val')},
-      {key:'nonpolar', label:aa('류신','Leu')},{key:'nonpolar', label:aa('페닐알라닌','Phe')},
-      {key:'polar', label:aa('세린','Ser')},{key:'polar', label:aa('트레오닌','Thr')},
-      {key:'polar', label:aa('라이신','Lys')},{key:'polar', label:aa('아스파트산','Asp')},
-    ],
-    bins:[{key:'nonpolar',ko:'무극성',en:'Nonpolar',desc:'소수성 곁사슬'},{key:'polar',ko:'극성',en:'Polar',desc:'친수성 곁사슬'}],
-    successMsg:'정확해요! 🎉 무극성(알라닌·발린·류신·페닐알라닌) / 극성(세린·트레오닌·라이신·아스파트산) 분류 완료!',
-    rerun:gameAminoSort
+/* ---- 단백질 미션 1: 아미노산 조립 (기본 구조) ---- */
+function gameAminoBuild(){
+  const vid='protein';
+  gameShellV(vid,'아미노산 조립소','Build an Amino Acid','미션 1 · 조립',
+    '중심 탄소(C<sub>α</sub>)의 네 결합 자리에 아미노산을 이루는 <b>4가지 기</b>를 끌어다 놓으세요. (핵산의 성분은 필요 없어요)','gb');
+  const body=document.getElementById('gb');
+  body.innerHTML=`
+    <div class="aaWrap">
+      <div class="aaGrid">
+        <div></div><div class="dz aaSlot" data-slot></div><div></div>
+        <div class="dz aaSlot" data-slot></div>
+        <div class="aaCore">C<sub>α</sub><small>중심 탄소</small></div>
+        <div class="dz aaSlot" data-slot></div>
+        <div></div><div class="dz aaSlot" data-slot></div><div></div>
+      </div>
+    </div>
+    <div class="pool" id="pool"></div>
+    <div class="feedback" id="fb"></div>
+    <div class="btnRow"><button class="ghost" id="reset">다시</button><button class="primary" id="submit">확인</button></div>`;
+  const pool=document.getElementById('pool');
+  const NEED=['nh2','cooh','h','r'];
+  const parts=[
+    {k:'nh2',ko:'아미노기',f:'−NH₂'},{k:'cooh',ko:'카복실기',f:'−COOH'},
+    {k:'h',ko:'수소',f:'−H'},{k:'r',ko:'곁사슬',f:'−R'},
+    {k:'x',ko:'인산기',f:'−PO₄'},{k:'x',ko:'염기',f:'base'},
+  ];
+  parts.sort(()=>Math.random()-.5).forEach(p=>{
+    const t=document.createElement('div'); t.className='token'; t.dataset.k=p.k;
+    t.innerHTML=`${p.ko}<span class="en">${p.f}</span>`;
+    makeDraggable(t,{dropSelector:'[data-slot],[data-drop]', onDropTo:(el,zone)=>{
+      const slot=zone.closest('.aaSlot');
+      if(!slot){ pool.appendChild(el); return; }
+      const prev=slot.querySelector('.token'); if(prev) pool.appendChild(prev);
+      slot.appendChild(el); document.getElementById('fb').className='feedback';
+    }});
+    pool.appendChild(t);
   });
+  pool.setAttribute('data-drop','');
+  document.getElementById('reset').onclick=gameAminoBuild;
+  document.getElementById('submit').onclick=()=>{
+    const fb=document.getElementById('fb');
+    const slots=[...document.querySelectorAll('.aaSlot')];
+    if(slots.some(s=>!s.querySelector('.token'))){ fb.className='feedback incorrect'; fb.innerHTML='네 결합 자리를 모두 채워 주세요.'; return; }
+    const keys=slots.map(s=>s.querySelector('.token').dataset.k).sort();
+    const ok=JSON.stringify(keys)===JSON.stringify([...NEED].sort());
+    if(ok){ fb.className='feedback correct';
+      fb.innerHTML='아미노산 완성! 🎉 모든 아미노산은 중심 탄소에 <b>아미노기(−NH₂)·카복실기(−COOH)·수소(−H)·곁사슬(−R)</b>이 결합해요. 곁사슬(R)만 20종으로 달라집니다.';
+      winMission(vid,'aminobuild'); }
+    else { fb.className='feedback incorrect';
+      fb.innerHTML='아미노산의 구성 요소가 아니에요. 필요한 4가지는 <b>−NH₂, −COOH, −H, −R</b>입니다. (인산기·염기는 핵산의 성분)'; }
+  };
 }
 
 /* ---- 단백질 미션 2: 펩타이드 결합 ---- */
