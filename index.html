@@ -165,6 +165,9 @@
   .clear .badgeGet .bi{font-size:2.5rem}
 
   /* ---------- 광합성 반응로 ---------- */
+  .eqBox{margin-top:10px;background:#fff;border:2px solid #f0d48a;border-radius:10px;padding:10px 12px;
+    text-align:center;font-weight:800;font-size:1.02rem;color:#7a5a00;letter-spacing:.3px;overflow-x:auto;white-space:nowrap}
+  .eqBox b{color:#c0392b}
   .reactorWrap{display:flex;gap:16px;flex-wrap:wrap;align-items:stretch;margin-bottom:12px}
   .sources{display:flex;flex-direction:column;gap:12px;min-width:150px;flex:1}
   .srcCol{background:#f6f6fc;border-radius:14px;padding:14px;text-align:center}
@@ -756,11 +759,14 @@ function molO2(){return `<svg viewBox="0 0 40 24" width="34" xmlns="http://www.w
 /* ---------------- 미션 1: 광합성 반응로 ---------------- */
 function gameAtom(){
   gameShell('광합성 반응로','Photosynthesis Reactor','미션 1 · 반응 조립',
-    '☀️ 빛 에너지로 <b>CO₂</b>와 <b>H₂O</b>를 엽록체 반응로에 넣어 포도당을 합성하세요.<br><b>6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂</b> (넣은 분자를 누르면 빼기)',
+    '☀️ 빛 에너지로 <b>CO₂ 6개</b>와 <b>H₂O 12개</b>를 엽록체 반응로에 넣어 포도당을 합성하세요. (넣은 분자를 누르면 빼기)'
+    + '<div class="eqBox">6CO₂ + <b>12</b>H₂O → C₆H₁₂O₆ + 6O₂ + <b>6</b>H₂O</div>'
+    + '<div style="font-size:.82rem;color:#7a5a00;margin-top:4px">💡 방출되는 산소(O₂)는 <b>물의 광분해</b>에서 나와요. 그래서 물이 <b>12개</b> 필요하고, 캘빈 회로에서 물 <b>6개</b>가 다시 생겨 순소비는 6개랍니다.</div>',
     'atomBody');
   const body=document.getElementById('atomBody');
   const state={co2:0, h2o:0, done:false};
-  const CAP=8;
+  const TARGET={co2:6, h2o:12};
+  const CAP={co2:9, h2o:16};
   body.innerHTML=`
     <div class="reactorWrap">
       <div class="sources">
@@ -777,7 +783,7 @@ function gameAtom(){
     </div>
     <div class="counts">
       <div class="count" id="cCO2"><div class="n">0/6</div><div class="lab2">CO₂</div></div>
-      <div class="count" id="cH2O"><div class="n">0/6</div><div class="lab2">H₂O</div></div>
+      <div class="count" id="cH2O"><div class="n">0/12</div><div class="lab2">H₂O</div></div>
     </div>
     <div class="atomTally" id="tally"></div>
     <div class="feedback" id="fb"></div>
@@ -796,15 +802,15 @@ function gameAtom(){
       bucket.appendChild(chip);
     }};
     add('co2',molCO2()); add('h2o',molH2O());
-    const setC=(id,cur)=>{const el=document.getElementById(id); el.querySelector('.n').textContent=cur+'/6'; el.classList.toggle('ok',cur===6);};
-    setC('cCO2',state.co2); setC('cH2O',state.h2o);
+    const setC=(id,cur,tgt)=>{const el=document.getElementById(id); el.querySelector('.n').textContent=cur+'/'+tgt; el.classList.toggle('ok',cur===tgt);};
+    setC('cCO2',state.co2,TARGET.co2); setC('cH2O',state.h2o,TARGET.h2o);
     const C=state.co2, H=state.h2o*2, O=state.co2*2+state.h2o;
     document.getElementById('tally').innerHTML=`반응로 속 원자 → 탄소 C <b>${C}</b> · 수소 H <b>${H}</b> · 산소 O <b>${O}</b>`;
   }
   draw();
 
   document.querySelectorAll('.mol').forEach(m=>{
-    const add=()=>{ if(state.done)return; const t=m.dataset.mol; if(state[t]<CAP){state[t]++;draw();document.getElementById('fb').className='feedback';} };
+    const add=()=>{ if(state.done)return; const t=m.dataset.mol; if(state[t]<CAP[t]){state[t]++;draw();document.getElementById('fb').className='feedback';} };
     makeDraggable(m,{dropSelector:'[data-drop]', onDropTo:add});
     m.onclick=add;
   });
@@ -813,34 +819,37 @@ function gameAtom(){
   document.getElementById('react').onclick=()=>{
     const fb=document.getElementById('fb');
     if(state.done) return;
-    if(state.co2===6 && state.h2o===6){
+    if(state.co2===TARGET.co2 && state.h2o===TARGET.h2o){
       state.done=true;
       fb.className='feedback correct';
-      fb.innerHTML='광합성 성공! 🎉 좌변·우변 원자 수(C 6 · H 12 · O 18)가 완벽히 보존돼요.';
+      fb.innerHTML='광합성 성공! 🎉 좌변·우변 원자 수(C 6 · H 24 · O 24)가 완벽히 보존돼요.';
       reactAnimation();
       markDone('atom');
     }else{
       fb.className='feedback incorrect';
       const msg=[];
-      if(state.co2!==6) msg.push(`CO₂ ${state.co2}→6`);
-      if(state.h2o!==6) msg.push(`H₂O ${state.h2o}→6`);
-      fb.innerHTML=`원자 수가 맞지 않아요. <b>CO₂ 6개 + H₂O 6개</b>가 필요해요. (${msg.join(', ')})`;
+      if(state.co2!==TARGET.co2) msg.push(`CO₂ ${state.co2}→6`);
+      if(state.h2o!==TARGET.h2o) msg.push(`H₂O ${state.h2o}→12`);
+      fb.innerHTML=`원자 수가 맞지 않아요. <b>CO₂ 6개 + H₂O 12개</b>가 필요해요. (${msg.join(', ')})`;
     }
   };
 
   function reactAnimation(){
     const reactor=document.getElementById('reactor');
     bucket.innerHTML='';
-    // 산소 방울 6개 방출
+    // 산소(O₂) 6개 + 부산물 물(H₂O) 6개 방출
     for(let i=0;i<6;i++){
-      const b=document.createElement('div'); b.className='o2bubble'; b.innerHTML=molO2();
-      b.style.left=(12+i*13)+'%'; b.style.animationDelay=(i*0.12)+'s';
-      reactor.appendChild(b);
+      const o=document.createElement('div'); o.className='o2bubble'; o.innerHTML=molO2();
+      o.style.left=(8+i*11)+'%'; o.style.animationDelay=(i*0.12)+'s';
+      reactor.appendChild(o);
+      const w=document.createElement('div'); w.className='o2bubble'; w.innerHTML=molH2O();
+      w.style.left=(14+i*11)+'%'; w.style.animationDelay=(0.5+i*0.12)+'s';
+      reactor.appendChild(w);
     }
-    // 포도당 생성 표시
+    // 생성물 표시
     const glu=document.createElement('div'); glu.className='productPop';
-    glu.style.cssText='margin-top:8px;text-align:center;font-weight:800;color:#4a7a2a';
-    glu.innerHTML='✨ 포도당 C₆H₁₂O₆ 1분자 생성 + 산소(O₂) 6분자 방출 ✨';
+    glu.style.cssText='margin-top:8px;text-align:center;font-weight:800;color:#4a7a2a;line-height:1.5';
+    glu.innerHTML='✨ 포도당 C₆H₁₂O₆ <b>1</b>분자 생성<br>🫧 산소 O₂ <b>6</b>분자 방출 · 💧 물 H₂O <b>6</b>분자 재생성';
     bucket.appendChild(glu);
     showGlucoseReward(body);
   }
