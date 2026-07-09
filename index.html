@@ -1631,9 +1631,18 @@ function gameBasePair(){
     <div class="btnRow"><button class="ghost" id="reset">다시</button></div>`;
   const rows=document.getElementById('rows'), pool=document.getElementById('pool');
   const baseTag=(b,big)=>`<div style="width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;background:${colors[b]};font-size:${big?'1.1rem':'1rem'}">${b}</div>`;
+  // 수소 결합 그래픽: A-T 2줄, G-C 3줄 (점선 평행선)
+  const bondCount=top=>(top==='G'||top==='C')?3:2;
+  const hbondSVG=n=>{
+    const ys=n===3?[6,13,20]:[9,17];
+    const lines=ys.map(y=>`<line x1="3" y1="${y}" x2="33" y2="${y}" stroke="#555a72" stroke-width="2.6" stroke-dasharray="3.2 2.4" stroke-linecap="round"/>`).join('');
+    return `<svg viewBox="0 0 36 26" width="36" height="26" style="display:block">${lines}</svg>
+      <span style="font-size:.62rem;color:#8a86a0;font-weight:700">${n}개</span>`;
+  };
+  const placeholder='<span style="color:#d0d0dc;font-weight:800;letter-spacing:2px">┄┄</span>';
   strand.forEach((b,i)=>{
     const row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;gap:8px;justify-content:center';
-    row.innerHTML=`${baseTag(b,true)}<span class="bondMark" data-i="${i}" style="min-width:30px;text-align:center;color:#bbb;font-weight:800">···</span>`;
+    row.innerHTML=`${baseTag(b,true)}<span class="bondMark" data-i="${i}" style="width:44px;display:flex;flex-direction:column;align-items:center;justify-content:center">${placeholder}</span>`;
     const slot=document.createElement('div'); slot.className='baseSlot dz'; slot.dataset.need=comp[b]; slot.setAttribute('data-drop','');
     slot.style.cssText='width:46px;height:46px;border:2px dashed #cfcfe0;border-radius:10px;background:#fafaff';
     row.appendChild(slot); rows.appendChild(row);
@@ -1644,28 +1653,32 @@ function gameBasePair(){
     t.innerHTML=baseTag(b,false);
     makeDraggable(t,{dropSelector:'[data-drop]', onDropTo:(el,zone)=>{
       const slot=zone.closest('.baseSlot');
-      if(!slot){ pool.appendChild(el); return; }
+      if(!slot){ pool.appendChild(el); updateAll(); return; }
       const prev=slot.querySelector('.token'); if(prev) pool.appendChild(prev);
-      slot.appendChild(el); check();
+      slot.appendChild(el); updateAll();
     }});
     pool.appendChild(t);
   });
-  function check(){
+  function updateAll(){
     const slots=[...document.querySelectorAll('.baseSlot')];
-    if(slots.some(s=>!s.querySelector('.token'))) return;
-    let ok=true;
+    let filled=0, correct=0;
     slots.forEach((s,i)=>{
-      const b=s.querySelector('.token').dataset.base;
-      const correct=b===s.dataset.need;
-      if(!correct) ok=false;
       const mark=document.querySelector(`.bondMark[data-i="${i}"]`);
-      if(correct){ const pair=s.dataset.need, top=strand[i];
-        const three=(top==='G'||top==='C'); mark.textContent=three?'≡':'⟌⟌'; mark.style.color=three?'#4a6cf7':'#e5484d'; }
+      const tok=s.querySelector('.token');
+      if(!tok){ mark.innerHTML=placeholder; return; }
+      filled++;
+      if(tok.dataset.base===s.dataset.need){ correct++; mark.innerHTML=hbondSVG(bondCount(strand[i])); }
+      else mark.innerHTML='<span style="color:#f5576c;font-weight:800;font-size:1.2rem">✕</span>';
     });
     const fb=document.getElementById('fb');
-    if(ok){ fb.className='feedback correct';
-      fb.innerHTML='정답! 🎉 <b>A-T는 수소결합 2개, G-C는 3개</b>로 결합해요. (샤가프 규칙)'; winMission(vid,'basepair'); }
-    else { fb.className='feedback incorrect'; fb.innerHTML='상보 결합이 맞지 않아요. <b>A-T, G-C</b>를 떠올려 보세요.'; }
+    if(filled===slots.length && correct===slots.length){
+      fb.className='feedback correct';
+      fb.innerHTML='정답! 🎉 <b>A-T는 수소 결합 2개, G-C는 3개</b>로 결합해요. (샤가프 규칙: A=T, G≡C)';
+      winMission(vid,'basepair');
+    } else if(filled===slots.length){
+      fb.className='feedback incorrect';
+      fb.innerHTML='상보 결합이 맞지 않아요. <b>A-T, G-C</b> 규칙을 떠올려 보세요.';
+    } else { fb.className='feedback'; }
   }
   document.getElementById('reset').onclick=gameBasePair;
 }
