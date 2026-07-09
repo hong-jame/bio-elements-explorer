@@ -1190,7 +1190,7 @@ function drawQuizQuestion(){
   const item = items[i];
   quizState.answered = false;
   document.getElementById('qProgress').textContent = `문제 ${i+1} / ${items.length}`;
-  document.getElementById('qText').textContent = item.q;
+  document.getElementById('qText').innerHTML = item.q;
   const fb = document.getElementById('qFb'); fb.className='feedback'; fb.innerHTML='';
   document.getElementById('qBtnRow').innerHTML='';
   const box = document.getElementById('qChoices');
